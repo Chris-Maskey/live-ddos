@@ -12,6 +12,7 @@ import {
 const API_ROOT = "https://api.cloudflare.com/client/v4/radar";
 const REVALIDATE_SECONDS = 300;
 const REQUEST_TIMEOUT_MS = 10_000;
+const LOCATION_BATCH_SIZE = 2;
 
 export type RadarFailureKind = "missing-token" | "unauthorized" | "rate-limited" | "upstream" | "invalid-data";
 
@@ -74,24 +75,28 @@ const loadSnapshot = async (range: RadarRange): Promise<AttackSnapshot> => {
   }).toString();
 
   const pairPayload = await readJson(attacksUrl, token);
-  let locationPayload: unknown;
-
   try {
     const codes = getRadarLocationCodes(pairPayload).sort();
-    if (codes.length === 0) {
-      locationPayload = { success: true, result: { locations: [] } };
-    } else {
-      const locationsUrl = new URL(`${API_ROOT}/entities/locations`);
-      locationsUrl.search = new URLSearchParams({
-        location: codes.join(","),
-        format: "JSON",
-      }).toString();
-      locationPayload = await readJson(locationsUrl, token, 86_400);
+    const batches: string[][] = [];
+    for (let index = 0; index < codes.length; index += LOCATION_BATCH_SIZE) {
+      batches.push(codes.slice(index, index + LOCATION_BATCH_SIZE));
     }
+
+    // The locations endpoint currently rejects lists longer than two codes.
+    const locationPayloads = await Promise.all(
+      batches.map(async (batch) => {
+        const locationsUrl = new URL(`${API_ROOT}/entities/locations`);
+        locationsUrl.search = new URLSearchParams({
+          location: batch.join(","),
+          format: "JSON",
+        }).toString();
+        return readJson(locationsUrl, token, 86_400);
+      }),
+    );
 
     return normalizeRadarSnapshot(
       pairPayload,
-      locationPayload,
+      locationPayloads,
       range,
       new Date().toISOString(),
     );

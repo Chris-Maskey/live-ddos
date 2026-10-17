@@ -235,7 +235,7 @@ const getLocations = (payload: unknown): Map<string, Location> => {
 
 export function normalizeRadarSnapshot(
   pairPayload: unknown,
-  locationPayload: unknown,
+  locationPayloads: unknown[],
   range: RadarRange,
   fetchedAt: string,
 ): AttackSnapshot {
@@ -247,7 +247,12 @@ export function normalizeRadarSnapshot(
     throw new InvalidRadarDataError("Snapshot fetch time is invalid.");
   }
 
-  const locations = getLocations(locationPayload);
+  const locations = new Map<string, Location>();
+  for (const locationPayload of locationPayloads) {
+    for (const [code, location] of getLocations(locationPayload)) {
+      locations.set(code, location);
+    }
+  }
   const routes = pairData.pairs.map((pair, index): AttackRoute => {
     const origin = locations.get(pair.originCode);
     const target = locations.get(pair.targetCode);
