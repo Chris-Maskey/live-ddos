@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:data": "node --test lib/attack-data.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
