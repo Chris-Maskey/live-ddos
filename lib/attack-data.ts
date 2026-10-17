@@ -66,6 +66,68 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isTimestamp = (value: unknown): value is string =>
   typeof value === "string" && Number.isFinite(Date.parse(value));
 
+const isLatitude = (value: unknown): value is number | null =>
+  value === null ||
+  (typeof value === "number" && Number.isFinite(value) && value >= -90 && value <= 90);
+
+const isLongitude = (value: unknown): value is number | null =>
+  value === null ||
+  (typeof value === "number" && Number.isFinite(value) && value >= -180 && value <= 180);
+
+export function isAttackSnapshot(value: unknown): value is AttackSnapshot {
+  if (!isRecord(value) || (value.range !== "1d" && value.range !== "7d")) {
+    return false;
+  }
+
+  if (
+    value.normalization !== "PERCENTAGE" ||
+    !isTimestamp(value.lastUpdated) ||
+    !isTimestamp(value.fetchedAt) ||
+    !isRecord(value.window) ||
+    !isTimestamp(value.window.startTime) ||
+    !isTimestamp(value.window.endTime) ||
+    Date.parse(value.window.endTime) <= Date.parse(value.window.startTime) ||
+    !Array.isArray(value.units) ||
+    !value.units.every((unit) => typeof unit === "string") ||
+    !Array.isArray(value.routes) ||
+    value.routes.length > 40
+  ) {
+    return false;
+  }
+
+  return value.routes.every((route) => {
+    if (
+      !isRecord(route) ||
+      typeof route.id !== "string" ||
+      typeof route.percent !== "number" ||
+      !Number.isFinite(route.percent) ||
+      route.percent < 0 ||
+      route.percent > 100 ||
+      typeof route.sameCountry !== "boolean" ||
+      !isRecord(route.origin) ||
+      !isRecord(route.target)
+    ) {
+      return false;
+    }
+
+    const origin = route.origin;
+    const target = route.target;
+    return (
+      typeof origin.code === "string" &&
+      /^[A-Z]{2}$/.test(origin.code) &&
+      typeof origin.name === "string" &&
+      isLatitude(origin.latitude) &&
+      isLongitude(origin.longitude) &&
+      typeof target.code === "string" &&
+      /^[A-Z]{2}$/.test(target.code) &&
+      typeof target.name === "string" &&
+      isLatitude(target.latitude) &&
+      isLongitude(target.longitude) &&
+      route.sameCountry === (origin.code === target.code)
+    );
+  });
+}
+
 const getPairData = (payload: unknown): RadarPairData => {
   if (!isRecord(payload) || payload.success !== true || !isRecord(payload.result)) {
     throw new InvalidRadarDataError("Radar returned an invalid attack response.");
