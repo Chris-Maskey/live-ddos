@@ -5,12 +5,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "test:data": "node --test lib/attack-data.test.mjs"
+    "test:data": "node --experimental-strip-types --test lib/attack-data.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
