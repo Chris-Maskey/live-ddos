@@ -27,7 +27,7 @@ Cloudflare Radar returns up to 40 country pairs for the selected window. Each pe
 
 Origin countries use Cloudflare's client IP geolocation. Target countries use the billing country for the attacked Cloudflare zone. Both are approximate country locations. Radar covers traffic observed by Cloudflare, not every attack on the Internet.
 
-The browser checks for a new snapshot every five minutes while the page is visible. The server caches snapshots for five minutes and caches coordinate lookups for one day. Cloudflare does not document a freshness guarantee for this endpoint, so the dataset update time and app fetch time are separate.
+The browser checks for a new snapshot every five minutes while the page is visible. The server assembles snapshots from pair responses cached for five minutes and coordinate lookups cached for one day. These use separate cache scopes so country lookups can be reused across reporting windows. Cloudflare does not document a freshness guarantee for this endpoint, so the dataset update time and app fetch time are separate.
 
 Radar data is licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). The dashboard links to Cloudflare Radar as the source. Review the license before using this dashboard commercially.
 
@@ -35,9 +35,14 @@ Radar data is licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses
 
 ```sh
 pnpm test:data
+pnpm test:radar
 pnpm typecheck
 pnpm lint
 pnpm build
 ```
 
 `pnpm test:data` runs the normalizer checks with Node's built-in test runner and TypeScript type stripping.
+
+`pnpm test:radar` checks API errors and independent cache lifetimes using the installed Next.js cache implementation, controlled provider responses, and in-memory cache storage. It needs no real API token. Node prints an experimental VM modules warning for this check.
+
+See [SPEC.md](SPEC.md) for the agreed baseline and [tasks/todo.md](tasks/todo.md) for verification results.

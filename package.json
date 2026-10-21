@@ -10,7 +10,8 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "test:data": "node --experimental-strip-types --test lib/attack-data.test.mjs"
+    "test:data": "node --experimental-strip-types --test lib/attack-data.test.mjs",
+    "test:radar": "node --experimental-vm-modules --test lib/cloudflare-radar.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

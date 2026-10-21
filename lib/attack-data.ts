@@ -198,7 +198,7 @@ export function getRadarLocationCodes(payload: unknown): string[] {
   return [...new Set(pairs.flatMap((pair) => [pair.originCode, pair.targetCode]))];
 }
 
-const getLocations = (payload: unknown): Map<string, Location> => {
+export const getLocations = (payload: unknown): Map<string, Location> => {
   if (!isRecord(payload) || payload.success !== true || !isRecord(payload.result)) {
     throw new InvalidRadarDataError("Radar returned an invalid locations response.");
   }
@@ -214,8 +214,17 @@ const getLocations = (payload: unknown): Map<string, Location> => {
         return [];
       }
 
-      const latitude = typeof row.latitude === "string" ? Number(row.latitude) : Number.NaN;
-      const longitude = typeof row.longitude === "string" ? Number(row.longitude) : Number.NaN;
+      if (
+        typeof row.latitude !== "string" ||
+        row.latitude.trim() === "" ||
+        typeof row.longitude !== "string" ||
+        row.longitude.trim() === ""
+      ) {
+        return [];
+      }
+
+      const latitude = Number(row.latitude);
+      const longitude = Number(row.longitude);
       if (
         !Number.isFinite(latitude) ||
         latitude < -90 ||
