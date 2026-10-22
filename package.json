@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "test:dashboard": "node --experimental-strip-types --test lib/dashboard-view-state.test.mjs",
     "typecheck": "tsc --noEmit",
     "test:data": "node --experimental-strip-types --test lib/attack-data.test.mjs",
     "test:radar": "node --experimental-vm-modules --test lib/cloudflare-radar.test.mjs"
