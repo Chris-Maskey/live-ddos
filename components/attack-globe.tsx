@@ -11,10 +11,10 @@ type AttackGlobeProps = {
 };
 
 const globeConfig: GlobeConfig = {
-  globeColor: "#0D2225",
-  emissive: "#061619",
+  globeColor: "#161B1D",
+  emissive: "#090B0C",
   atmosphereColor: "#64CDBF",
-  polygonColor: "rgba(145, 167, 163, 0.48)",
+  polygonColor: "rgba(156, 168, 171, 0.24)",
   autoRotate: true,
 };
 
@@ -64,7 +64,7 @@ export function AttackGlobe({
     <div
       role="group"
       aria-label="Interactive globe visualization of mapped country-pair routes. Select a route in the adjacent ledger for details."
-      className="relative h-[min(78vw,620px)] min-h-[300px] w-full overflow-hidden rounded-md border border-atlas-line bg-atlas-water sm:min-h-[420px]"
+      className="relative h-[min(78vw,620px)] min-h-[300px] w-full overflow-hidden rounded-md border border-atlas-line bg-atlas-panel sm:min-h-[420px]"
     >
       <GlobeErrorBoundary>
         <World

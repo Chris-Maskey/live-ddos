@@ -45,26 +45,22 @@ export function DashboardHeader({
       : "bg-atlas-route"
 
   return (
-    <header className="mb-5 flex flex-col gap-5 border-b border-atlas-line pb-5 lg:flex-row lg:items-end lg:justify-between">
+    <header className="mb-6 flex flex-col gap-5 border-b border-atlas-line pb-6 lg:flex-row lg:items-end lg:justify-between">
       <div className="min-w-0">
-        <p className="font-mono text-[10px] tracking-[0.2em] text-atlas-route uppercase">
-          HTTP DDoS · country pairs
+        <p className="font-heading text-sm font-semibold tracking-[0.2em] text-atlas-secondary uppercase">
+          LIVEDDOS
         </p>
-        <h1 className="mt-2 font-heading text-3xl leading-tight tracking-tight text-atlas-main sm:text-4xl">
+        <h1 className="mt-3 font-heading text-4xl leading-[0.95] tracking-[0.015em] text-atlas-main uppercase sm:text-5xl">
           Network attack map
         </h1>
         <p className="mt-2 text-sm text-atlas-secondary">
-          Cloudflare Radar{" "}
-          <span aria-hidden="true" className="px-1 text-atlas-secondary/70">
-            ·
-          </span>{" "}
-          aggregated HTTP DDoS routes
+          Cloudflare Radar · aggregated HTTP DDoS routes
         </p>
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] sm:text-xs">
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] sm:text-xs">
           <p
             role="status"
             aria-live="polite"
-            className="inline-flex items-center gap-2 font-mono tracking-wide text-atlas-secondary uppercase"
+            className="inline-flex items-center gap-2 font-mono tracking-wider text-atlas-secondary uppercase"
           >
             <span
               aria-hidden="true"

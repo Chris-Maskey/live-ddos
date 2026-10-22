@@ -39,12 +39,12 @@ export function RouteLedger({
       className="min-w-0 rounded-md border border-atlas-line bg-atlas-panel p-4 sm:p-5"
     >
       <div className="border-b border-atlas-line pb-4">
-        <p className="font-mono text-[10px] tracking-[0.2em] text-atlas-secondary uppercase">
+        <p className="font-mono text-[10px] tracking-[0.2em] text-atlas-route uppercase">
           Route ledger
         </p>
         <h2
           id="route-ledger-title"
-          className="mt-1 text-lg font-medium text-atlas-main"
+          className="mt-1 font-heading text-lg tracking-wide text-atlas-main uppercase"
         >
           Top country pairs
         </h2>
@@ -108,7 +108,7 @@ export function RouteLedger({
                       onClick={() => onSelectRoute(route.id)}
                       aria-pressed={selected}
                       aria-label={`${routeLabel(route)}; ${route.percent.toFixed(2)} percent normalized share${unmapped ? "; coordinates unavailable" : ""}`}
-                      className={`grid min-h-14 w-full grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-2 border-l-2 px-2 py-2.5 text-left hover:bg-atlas-water/70 focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:outline-none focus-visible:ring-inset motion-safe:transition-colors ${selected ? "border-atlas-amber bg-atlas-water/70 text-atlas-amber" : "border-transparent text-atlas-main hover:text-atlas-route"}`}
+                      className={`grid min-h-14 w-full grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-2 border-l-2 px-2 py-2.5 text-left focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:outline-none focus-visible:ring-inset motion-safe:transition-colors ${selected ? "border-atlas-amber bg-atlas-amber/10 text-atlas-amber" : "border-transparent text-atlas-main hover:bg-atlas-water/70 hover:text-atlas-route"}`}
                     >
                       <span
                         className={`font-mono text-[10px] tabular-nums ${selected ? "text-atlas-amber" : "text-atlas-secondary"}`}
@@ -143,7 +143,7 @@ export function RouteLedger({
               })}
             </ul>
           ) : (
-            <p className="mt-5 rounded border border-atlas-line px-3 py-4 text-sm leading-6 text-atlas-secondary">
+            <p className="mt-5 rounded border border-atlas-line bg-atlas-water/40 px-3 py-4 text-sm leading-6 text-atlas-secondary">
               No ranked country pairs in this reporting window.
             </p>
           )}

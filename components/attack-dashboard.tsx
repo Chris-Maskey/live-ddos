@@ -185,7 +185,7 @@ export function AttackDashboard() {
   }, [range, refreshKey])
 
   return (
-    <main className="min-h-svh bg-atlas-water px-4 py-5 text-atlas-main sm:px-6 sm:py-7 lg:px-8">
+    <main className="min-h-svh bg-atlas-water px-4 py-6 text-atlas-main sm:px-6 sm:py-8 lg:px-8">
       <div className="mx-auto max-w-screen-2xl">
         <DashboardHeader
           range={range}
@@ -197,12 +197,12 @@ export function AttackDashboard() {
         <section
           aria-label="Country-pair map and route details"
           aria-busy={isFetching}
-          className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start"
+          className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start xl:gap-6"
         >
           <div className="min-w-0">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-atlas-line pb-3">
               <div>
-                <p className="font-mono text-[10px] tracking-[0.2em] text-atlas-secondary uppercase">
+                <p className="font-mono text-[10px] tracking-[0.2em] text-atlas-route uppercase">
                   Route map
                 </p>
                 <p className="mt-1 text-xs text-atlas-secondary">
@@ -248,7 +248,7 @@ export function AttackDashboard() {
           />
         </section>
 
-        <footer className="mt-5 flex flex-col gap-3 border-t border-atlas-line pt-4 text-xs leading-5 text-atlas-secondary sm:flex-row sm:items-start sm:justify-between">
+        <footer className="mt-6 flex flex-col gap-3 border-t border-atlas-line pt-4 text-xs leading-5 text-atlas-secondary sm:flex-row sm:items-start sm:justify-between">
           <p className="max-w-3xl">
             Each arc summarizes an aggregate country pair during the selected
             reporting window. Motion illustrates route direction and does not
