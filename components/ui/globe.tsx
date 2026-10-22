@@ -75,18 +75,18 @@ type GlobePoint = {
 
 const DEFAULT_CONFIG: Required<GlobeConfig> = {
   pointSize: 1,
-  globeColor: "#07111d",
+  globeColor: "#0D2225",
   showAtmosphere: true,
-  atmosphereColor: "#38bdf8",
+  atmosphereColor: "#64CDBF",
   atmosphereAltitude: 0.12,
-  emissive: "#07111d",
+  emissive: "#061619",
   emissiveIntensity: 0.12,
   shininess: 0.82,
-  polygonColor: "rgba(100, 116, 139, 0.68)",
-  ambientLight: "#93c5fd",
-  directionalLeftLight: "#f8fafc",
-  directionalTopLight: "#67e8f9",
-  pointLight: "#38bdf8",
+  polygonColor: "rgba(145, 167, 163, 0.48)",
+  ambientLight: "#91A7A3",
+  directionalLeftLight: "#E4ECE7",
+  directionalTopLight: "#64CDBF",
+  pointLight: "#64CDBF",
   arcTime: 2400,
   arcLength: 0.34,
   rings: 1,
@@ -178,7 +178,7 @@ export function Globe({
       return {
         ...arc,
         order: index,
-        color: selected ? "#fbbf24" : arc.color,
+        color: selected ? "#EFB86C" : arc.color,
         stroke: selected ? Math.max(arc.stroke, 0.55) : arc.stroke,
       };
     });
@@ -250,8 +250,8 @@ function WorldContents({
 
   return (
     <>
-      <color attach="background" args={["#030811"]} />
-      <fog attach="fog" args={["#030811", 450, 1300]} />
+      <color attach="background" args={["#061619"]} />
+      <fog attach="fog" args={["#061619", 450, 1300]} />
       <ambientLight color={config.ambientLight} intensity={0.58} />
       <directionalLight
         color={config.directionalLeftLight}

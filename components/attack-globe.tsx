@@ -11,10 +11,10 @@ type AttackGlobeProps = {
 };
 
 const globeConfig: GlobeConfig = {
-  globeColor: "#07111d",
-  emissive: "#07111d",
-  atmosphereColor: "#38bdf8",
-  polygonColor: "rgba(100, 116, 139, 0.68)",
+  globeColor: "#161B1D",
+  emissive: "#090B0C",
+  atmosphereColor: "#64CDBF",
+  polygonColor: "rgba(156, 168, 171, 0.24)",
   autoRotate: true,
 };
 
@@ -23,7 +23,7 @@ const World = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="grid h-full place-items-center text-sm text-slate-400">
+      <div role="status" className="grid h-full place-items-center text-sm text-atlas-secondary">
         Preparing globe…
       </div>
     ),
@@ -44,7 +44,7 @@ class GlobeErrorBoundary extends Component<
     if (this.state.hasError) {
       return (
         <div className="grid h-full min-h-[360px] place-items-center px-6 text-center">
-          <p className="max-w-sm text-sm leading-6 text-slate-400">
+          <p role="status" className="max-w-sm text-sm leading-6 text-atlas-secondary">
             The 3D map is unavailable in this browser. The route list still contains the Radar data.
           </p>
         </div>
@@ -62,9 +62,9 @@ export function AttackGlobe({
 }: AttackGlobeProps) {
   return (
     <div
-      role="img"
-      aria-label={`Interactive globe visualization with ${arcs.length} mapped country pair routes. Select a route in the adjacent list for details.`}
-      className="relative h-[min(72vw,620px)] min-h-[360px] w-full overflow-hidden rounded-xl border border-slate-800 bg-[#030811] sm:h-[560px]"
+      role="group"
+      aria-label="Interactive globe visualization of mapped country-pair routes. Select a route in the adjacent ledger for details."
+      className="relative h-[min(78vw,620px)] min-h-[300px] w-full overflow-hidden rounded-md border border-atlas-line bg-atlas-panel sm:min-h-[420px]"
     >
       <GlobeErrorBoundary>
         <World
