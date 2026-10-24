@@ -41,39 +41,33 @@ export function DashboardHeader({
   const statusColor =
     (view.kind === "stale" && !isFetching) ||
     (view.kind === "unavailable" && !isFetching)
-      ? "bg-atlas-amber"
+      ? "bg-atlas-secondary"
       : "bg-atlas-route"
 
   return (
-    <header className="mb-6 flex flex-col gap-5 border-b border-atlas-line pb-6 lg:flex-row lg:items-end lg:justify-between">
-      <div className="min-w-0">
-        <p className="font-heading text-sm font-semibold tracking-[0.2em] text-atlas-secondary uppercase">
-          LIVEDDOS
+    <header className="mb-3 sm:mb-4">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-6 gap-y-1">
+        <p className="text-[15px] font-semibold tracking-tight text-atlas-main">
+          Liveddos
         </p>
-        <h1 className="mt-3 font-heading text-4xl leading-[0.95] tracking-[0.015em] text-atlas-main uppercase sm:text-5xl">
-          Network attack map
-        </h1>
-        <p className="mt-2 text-sm text-atlas-secondary">
-          Cloudflare Radar · aggregated HTTP DDoS routes
-        </p>
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] sm:text-xs">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-atlas-secondary">
           <p
             role="status"
             aria-live="polite"
-            className="inline-flex items-center gap-2 font-mono tracking-wider text-atlas-secondary uppercase"
+            className="inline-flex h-5 w-[9.5rem] items-center gap-2"
           >
             <span
               aria-hidden="true"
-              className={`size-2 shrink-0 rounded-full ${statusColor} ${view.kind === "loading" && isFetching ? "motion-safe:animate-pulse" : ""}`}
+              className={`size-1.5 shrink-0 rounded-full ${statusColor}`}
             />
             {statusLabel}
           </p>
           {snapshot && (
-            <p className="font-mono text-atlas-secondary">
-              Last dataset update{" "}
+            <p>
+              Updated{" "}
               <time
                 dateTime={snapshot.lastUpdated}
-                className="text-atlas-main tabular-nums"
+                className="inline-block w-48 truncate text-right font-mono text-xs tabular-nums"
               >
                 {new Date(snapshot.lastUpdated).toLocaleString()}
               </time>
@@ -82,43 +76,44 @@ export function DashboardHeader({
         </div>
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 sm:flex sm:items-end">
-        <fieldset className="min-w-0">
-          <legend className="mb-1.5 font-mono text-[10px] tracking-widest text-atlas-secondary uppercase">
-            Reporting window
-          </legend>
-          <div
-            role="group"
-            aria-label="Reporting window"
-            className="flex rounded-md border border-atlas-line bg-atlas-panel p-1"
+      <div className="mt-1 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <h1 className="text-[19px] leading-6 font-semibold tracking-tight text-atlas-main">
+          HTTP DDoS routes
+        </h1>
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <fieldset className="min-w-0">
+            <legend className="sr-only">Window</legend>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                aria-label="Last 24 hours"
+                aria-pressed={range === "1d"}
+                onClick={() => onRangeChange("1d")}
+                className={`dashboard-control min-h-11 min-w-11 border-b-2 px-2 text-xs font-medium focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-water focus-visible:outline-none ${range === "1d" ? "border-atlas-route text-atlas-main" : "border-transparent text-atlas-secondary"}`}
+              >
+                24h
+              </button>
+              <button
+                type="button"
+                aria-label="Last 7 days"
+                aria-pressed={range === "7d"}
+                onClick={() => onRangeChange("7d")}
+                className={`dashboard-control min-h-11 min-w-11 border-b-2 px-2 text-xs font-medium focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-water focus-visible:outline-none ${range === "7d" ? "border-atlas-route text-atlas-main" : "border-transparent text-atlas-secondary"}`}
+              >
+                7d
+              </button>
+            </div>
+          </fieldset>
+          <button
+            type="button"
+            onClick={onRefresh}
+            aria-label="Refresh Radar snapshot"
+            className="dashboard-control inline-flex min-h-11 items-center justify-center gap-2 px-1 text-xs text-atlas-secondary focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-water focus-visible:outline-none"
           >
-            <button
-              type="button"
-              aria-pressed={range === "1d"}
-              onClick={() => onRangeChange("1d")}
-              className={`min-h-9 flex-1 rounded px-2 text-xs font-medium focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-water focus-visible:outline-none motion-safe:transition-colors ${range === "1d" ? "bg-atlas-route/15 text-atlas-route" : "text-atlas-secondary hover:text-atlas-main"}`}
-            >
-              24 hours
-            </button>
-            <button
-              type="button"
-              aria-pressed={range === "7d"}
-              onClick={() => onRangeChange("7d")}
-              className={`min-h-9 flex-1 rounded px-2 text-xs font-medium focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-water focus-visible:outline-none motion-safe:transition-colors ${range === "7d" ? "bg-atlas-route/15 text-atlas-route" : "text-atlas-secondary hover:text-atlas-main"}`}
-            >
-              7 days
-            </button>
-          </div>
-        </fieldset>
-        <button
-          type="button"
-          onClick={onRefresh}
-          aria-label="Refresh Radar snapshot"
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-atlas-line bg-atlas-panel px-3 text-xs font-medium text-atlas-main hover:border-atlas-route/60 hover:text-atlas-route focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-water focus-visible:outline-none motion-safe:transition-colors"
-        >
-          <RefreshCw aria-hidden="true" className="size-4" />
-          Refresh
-        </button>
+            <RefreshCw aria-hidden="true" className="size-3.5" />
+            Refresh
+          </button>
+        </div>
       </div>
     </header>
   )

@@ -29,24 +29,27 @@ export type GlobeArc = {
   endLat: number;
   endLng: number;
   arcAlt: number;
-  color: string;
   stroke: number;
+};
+
+export type GlobePalette = {
+  background: string;
+  globe: string;
+  emissive: string;
+  atmosphere: string;
+  land: string;
+  route: string;
+  selectedRoute: string;
+  ambient: string;
+  globeHighlight: string;
 };
 
 export type GlobeConfig = {
   pointSize?: number;
-  globeColor?: string;
   showAtmosphere?: boolean;
-  atmosphereColor?: string;
   atmosphereAltitude?: number;
-  emissive?: string;
   emissiveIntensity?: number;
   shininess?: number;
-  polygonColor?: string;
-  ambientLight?: string;
-  directionalLeftLight?: string;
-  directionalTopLight?: string;
-  pointLight?: string;
   arcTime?: number;
   arcLength?: number;
   rings?: number;
@@ -61,6 +64,7 @@ export type GlobeConfig = {
 
 type WorldProps = {
   globeConfig: GlobeConfig;
+  palette: GlobePalette;
   data: GlobeArc[];
   motionEnabled?: boolean;
   selectedRouteId?: string | null;
@@ -68,25 +72,16 @@ type WorldProps = {
 
 type GlobePoint = {
   size: number;
-  color: string;
   lat: number;
   lng: number;
 };
 
 const DEFAULT_CONFIG: Required<GlobeConfig> = {
   pointSize: 1,
-  globeColor: "#0D2225",
   showAtmosphere: true,
-  atmosphereColor: "#64CDBF",
   atmosphereAltitude: 0.12,
-  emissive: "#061619",
   emissiveIntensity: 0.12,
   shininess: 0.82,
-  polygonColor: "rgba(145, 167, 163, 0.48)",
-  ambientLight: "#91A7A3",
-  directionalLeftLight: "#E4ECE7",
-  directionalTopLight: "#64CDBF",
-  pointLight: "#64CDBF",
   arcTime: 2400,
   arcLength: 0.34,
   rings: 1,
@@ -98,6 +93,7 @@ const DEFAULT_CONFIG: Required<GlobeConfig> = {
 
 export function Globe({
   globeConfig,
+  palette,
   data,
   motionEnabled = true,
   selectedRouteId = null,
@@ -132,8 +128,8 @@ export function Globe({
 
     const material = globe.globeMaterial();
     if (material instanceof MeshPhongMaterial) {
-      material.color.set(config.globeColor);
-      material.emissive.set(config.emissive);
+      material.color.set(palette.globe);
+      material.emissive.set(palette.emissive);
       material.emissiveIntensity = config.emissiveIntensity;
       material.shininess = config.shininess;
     }
@@ -143,10 +139,10 @@ export function Globe({
       .hexPolygonResolution(3)
       .hexPolygonMargin(0.7)
       .showAtmosphere(config.showAtmosphere)
-      .atmosphereColor(config.atmosphereColor)
+      .atmosphereColor(palette.atmosphere)
       .atmosphereAltitude(config.atmosphereAltitude)
-      .hexPolygonColor(() => config.polygonColor);
-  }, [config, isInitialized]);
+      .hexPolygonColor(() => palette.land);
+  }, [config, isInitialized, palette]);
 
   const points = useMemo(() => {
     const locations = new Map<string, GlobePoint>();
@@ -159,7 +155,6 @@ export function Globe({
         if (!locations.has(key)) {
           locations.set(key, {
             size: config.pointSize,
-            color: arc.color,
             lat,
             lng,
           });
@@ -178,7 +173,7 @@ export function Globe({
       return {
         ...arc,
         order: index,
-        color: selected ? "#EFB86C" : arc.color,
+        color: selected ? palette.selectedRoute : palette.route,
         stroke: selected ? Math.max(arc.stroke, 0.55) : arc.stroke,
       };
     });
@@ -196,14 +191,14 @@ export function Globe({
       .arcDashInitialGap("order")
       .arcDashGap(motionEnabled ? 1 : 0)
       .arcDashAnimateTime(motionEnabled ? config.arcTime : 0)
-      .arcsTransitionDuration(450)
+      .arcsTransitionDuration(motionEnabled ? 450 : 0)
       .pointsData(points)
-      .pointColor("color")
+      .pointColor(() => palette.route)
       .pointsMerge(true)
       .pointAltitude(0.015)
       .pointRadius(0.6)
       .ringsData([])
-      .ringColor(() => config.atmosphereColor)
+      .ringColor(() => palette.atmosphere)
       .ringMaxRadius(config.maxRings)
       .ringPropagationSpeed(RING_PROPAGATION_SPEED)
       .ringRepeatPeriod(
@@ -212,12 +207,14 @@ export function Globe({
   }, [
     config.arcLength,
     config.arcTime,
-    config.atmosphereColor,
     config.maxRings,
     config.rings,
     data,
     isInitialized,
     motionEnabled,
+    palette.atmosphere,
+    palette.route,
+    palette.selectedRoute,
     points,
     selectedRouteId,
   ]);
@@ -238,6 +235,7 @@ export function Globe({
 
 function WorldContents({
   globeConfig,
+  palette,
   data,
   motionEnabled = true,
   selectedRouteId = null,
@@ -250,24 +248,25 @@ function WorldContents({
 
   return (
     <>
-      <color attach="background" args={["#061619"]} />
-      <fog attach="fog" args={["#061619", 450, 1300]} />
-      <ambientLight color={config.ambientLight} intensity={0.58} />
+      <color attach="background" args={[palette.background]} />
+      <fog attach="fog" args={[palette.background, 450, 1300]} />
+      <ambientLight color={palette.ambient} intensity={0.58} />
       <directionalLight
-        color={config.directionalLeftLight}
+        color={palette.globeHighlight}
         position={new Vector3(-400, 100, 400)}
       />
       <directionalLight
-        color={config.directionalTopLight}
+        color={palette.route}
         position={new Vector3(-200, 500, 200)}
       />
       <pointLight
-        color={config.pointLight}
+        color={palette.route}
         position={new Vector3(-200, 500, 200)}
         intensity={0.8}
       />
       <Globe
         globeConfig={globeConfig}
+        palette={palette}
         data={data}
         motionEnabled={motionEnabled}
         selectedRouteId={selectedRouteId}

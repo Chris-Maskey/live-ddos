@@ -49,7 +49,6 @@ const makeArcs = (snapshot: AttackSnapshot | undefined): GlobeArc[] =>
         endLat,
         endLng,
         arcAlt: Math.min(0.52, 0.12 + weight * 0.035),
-        color: "#64CDBF",
         stroke: Math.min(0.62, 0.12 + weight * 0.055),
       },
     ]
@@ -185,8 +184,8 @@ export function AttackDashboard() {
   }, [range, refreshKey])
 
   return (
-    <main className="min-h-svh bg-atlas-water px-4 py-6 text-atlas-main sm:px-6 sm:py-8 lg:px-8">
-      <div className="mx-auto max-w-screen-2xl">
+    <main className="min-h-svh bg-atlas-water px-4 py-4 text-atlas-main sm:px-6 sm:py-5 lg:px-8 lg:py-6">
+      <div className="mx-auto max-w-[1120px]">
         <DashboardHeader
           range={range}
           view={view}
@@ -195,26 +194,25 @@ export function AttackDashboard() {
         />
 
         <section
-          aria-label="Country-pair map and route details"
+          aria-label="Ranked routes and globe visualization"
           aria-busy={isFetching}
-          className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start xl:gap-6"
+          className="route-index-enter route-index-layout grid min-w-0 gap-3 lg:grid-cols-[minmax(0,48fr)_minmax(0,52fr)] lg:items-start lg:gap-8"
         >
-          <div className="min-w-0">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-atlas-line pb-3">
-              <div>
-                <p className="font-mono text-[10px] tracking-[0.2em] text-atlas-route uppercase">
-                  Route map
-                </p>
-                <p className="mt-1 text-xs text-atlas-secondary">
-                  Country-level routes · drag to rotate
-                </p>
-              </div>
+          <RouteLedger
+            view={view}
+            selectedRouteId={selectedRouteId}
+            onSelectRoute={setSelectedRouteId}
+          />
+
+          <div className="route-index-globe min-w-0">
+            <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-3">
+              <p className="text-xs text-atlas-secondary">Drag to rotate</p>
               <button
                 type="button"
                 onClick={() => setMotionEnabled((enabled) => !enabled)}
                 disabled={prefersReducedMotion}
                 aria-pressed={motionEnabled && !prefersReducedMotion}
-                className="inline-flex min-h-10 items-center gap-2 rounded-md border border-atlas-line bg-atlas-panel px-3 text-xs font-medium text-atlas-main hover:border-atlas-route/60 hover:text-atlas-route focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-water focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-75 motion-safe:transition-colors"
+                className="dashboard-control inline-flex min-h-11 items-center gap-2 px-1 text-xs text-atlas-secondary focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-water focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-75"
               >
                 {motionEnabled && !prefersReducedMotion ? (
                   <Pause aria-hidden="true" className="size-4" />
@@ -234,33 +232,21 @@ export function AttackDashboard() {
               motionEnabled={motionEnabled && !prefersReducedMotion}
               selectedRouteId={selectedRouteId}
             />
-            <p className="mt-2 text-xs leading-5 text-atlas-secondary">
-              {prefersReducedMotion
-                ? "System reduced motion is on. Drag the globe to rotate it manually."
-                : "Arc motion is a display effect. Drag the globe to rotate it manually."}
-            </p>
           </div>
-
-          <RouteLedger
-            view={view}
-            selectedRouteId={selectedRouteId}
-            onSelectRoute={setSelectedRouteId}
-          />
         </section>
 
-        <footer className="mt-6 flex flex-col gap-3 border-t border-atlas-line pt-4 text-xs leading-5 text-atlas-secondary sm:flex-row sm:items-start sm:justify-between">
+        <footer className="mt-4 flex flex-col gap-x-8 gap-y-2 border-t border-atlas-line/70 pt-3 text-xs leading-5 text-atlas-secondary sm:mt-5 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-3xl">
-            Each arc summarizes an aggregate country pair during the selected
-            reporting window. Motion illustrates route direction and does not
-            represent individual attacks. Locations are country-level
-            approximations.
+            Routes show country-level shares of normalized HTTP requests for the
+            selected window. Locations are country-level approximations. Arc
+            direction and motion are illustrative, not individual attacks.
           </p>
           <p className="shrink-0">
             <a
               href="https://radar.cloudflare.com/"
               target="_blank"
               rel="noreferrer"
-              className="text-atlas-route underline decoration-atlas-route/40 underline-offset-4 hover:text-atlas-main focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:outline-none"
+              className="dashboard-link text-atlas-route underline decoration-atlas-route/40 underline-offset-4 focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:outline-none"
             >
               Data by Cloudflare Radar
             </a>{" "}
@@ -269,7 +255,7 @@ export function AttackDashboard() {
               href="https://creativecommons.org/licenses/by-nc/4.0/"
               target="_blank"
               rel="noreferrer"
-              className="underline decoration-atlas-secondary/50 underline-offset-4 hover:text-atlas-main focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:outline-none"
+              className="dashboard-link underline decoration-atlas-secondary/50 underline-offset-4 focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:outline-none"
             >
               CC BY-NC 4.0
             </a>
