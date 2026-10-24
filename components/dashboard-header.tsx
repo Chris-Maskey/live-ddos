@@ -78,7 +78,7 @@ export function DashboardHeader({
     <header className="mb-4 border-b border-atlas-line/70 pb-4 sm:mb-5">
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <p className="font-mono text-[11px] font-semibold tracking-[0.16em] text-atlas-main uppercase">
-          Liveddos
+          DDoS Atlas
         </p>
         <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-atlas-secondary">
           <p

@@ -1,4 +1,4 @@
-# Live DDoS map
+# DDoS Atlas context
 
 This context defines the country-level HTTP DDoS data shown from Cloudflare Radar.
 

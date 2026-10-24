@@ -1,4 +1,4 @@
-# Live DDoS map plan
+# DDoS Atlas plan
 
 Status: Approved for execution on 2026-10-21. See the task list for results.
 
