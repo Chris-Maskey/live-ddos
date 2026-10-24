@@ -2,10 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { Pause, Play } from "lucide-react"
-import { AttackGlobe } from "@/components/attack-globe"
+import { AttackGlobe, type GlobeScene } from "@/components/attack-globe"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { RouteLedger } from "@/components/route-ledger"
-import { type GlobeArc } from "@/components/ui/globe"
 import {
   isAttackSnapshot,
   type AttackSnapshot,
@@ -26,8 +25,26 @@ const responseError = (body: unknown): string | null => {
   return typeof error.message === "string" ? error.message : null
 }
 
-const makeArcs = (snapshot: AttackSnapshot | undefined): GlobeArc[] =>
-  (snapshot?.routes ?? []).flatMap((route, order) => {
+const makeGlobeScene = (snapshot: AttackSnapshot | undefined): GlobeScene => {
+  const arcs: GlobeScene["arcs"] = []
+  const locations: GlobeScene["locations"] = []
+  const seenCountries = new Set<GlobeScene["locations"][number]["code"]>()
+
+  for (const [order, route] of (snapshot?.routes ?? []).entries()) {
+    for (const endpoint of [route.origin, route.target]) {
+      const { code, latitude, longitude } = endpoint
+      if (
+        latitude === null ||
+        longitude === null ||
+        seenCountries.has(code)
+      ) {
+        continue
+      }
+
+      seenCountries.add(code)
+      locations.push({ code, lat: latitude, lng: longitude })
+    }
+
     const { latitude: startLat, longitude: startLng } = route.origin
     const { latitude: endLat, longitude: endLng } = route.target
     if (
@@ -36,23 +53,24 @@ const makeArcs = (snapshot: AttackSnapshot | undefined): GlobeArc[] =>
       endLat === null ||
       endLng === null
     ) {
-      return []
+      continue
     }
 
     const weight = Math.sqrt(route.percent)
-    return [
-      {
-        routeId: route.id,
-        order,
-        startLat,
-        startLng,
-        endLat,
-        endLng,
-        arcAlt: Math.min(0.52, 0.12 + weight * 0.035),
-        stroke: Math.min(0.62, 0.12 + weight * 0.055),
-      },
-    ]
-  })
+    arcs.push({
+      routeId: route.id,
+      order,
+      startLat,
+      startLng,
+      endLat,
+      endLng,
+      arcAlt: Math.min(0.52, 0.12 + weight * 0.035),
+      stroke: Math.min(0.62, 0.12 + weight * 0.055),
+    })
+  }
+
+  return { arcs, locations }
+}
 
 export function AttackDashboard() {
   const [range, setRange] = useState<RadarRange>("1d")
@@ -66,12 +84,16 @@ export function AttackDashboard() {
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [motionEnabled, setMotionEnabled] = useState(true)
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState<
+    boolean | null
+  >(null)
   const snapshot = snapshots[range]
   const error = errors[range]
   const isFetching = fetching[range] ?? false
   const view = getDashboardViewState({ snapshot, error, isFetching })
-  const arcs = useMemo(() => makeArcs(snapshot), [snapshot])
+  const scene = useMemo(() => makeGlobeScene(snapshot), [snapshot])
+  const effectiveMotionEnabled =
+    motionEnabled && prefersReducedMotion === false
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)")
@@ -184,8 +206,8 @@ export function AttackDashboard() {
   }, [range, refreshKey])
 
   return (
-    <main className="min-h-svh bg-atlas-water px-4 py-4 text-atlas-main sm:px-6 sm:py-5 lg:px-8 lg:py-6">
-      <div className="mx-auto max-w-[1120px]">
+    <main className="dashboard-page bg-atlas-water text-atlas-main">
+      <div className="dashboard-content mx-auto w-full max-w-[1120px]">
         <DashboardHeader
           range={range}
           view={view}
@@ -196,47 +218,51 @@ export function AttackDashboard() {
         <section
           aria-label="Ranked routes and globe visualization"
           aria-busy={isFetching}
-          className="route-index-enter route-index-layout grid min-w-0 gap-3 lg:grid-cols-[minmax(0,48fr)_minmax(0,52fr)] lg:items-start lg:gap-8"
+          className="route-index-enter route-index-layout grid min-h-0 min-w-0 gap-4 sm:gap-5"
         >
-          <RouteLedger
-            view={view}
-            selectedRouteId={selectedRouteId}
-            onSelectRoute={setSelectedRouteId}
-          />
-
-          <div className="route-index-globe min-w-0">
+          <div className="route-index-globe mx-auto w-full max-w-[760px] min-w-0">
             <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-3">
               <p className="text-xs text-atlas-secondary">Drag to rotate</p>
               <button
                 type="button"
                 onClick={() => setMotionEnabled((enabled) => !enabled)}
-                disabled={prefersReducedMotion}
-                aria-pressed={motionEnabled && !prefersReducedMotion}
+                disabled={prefersReducedMotion !== false}
+                aria-pressed={effectiveMotionEnabled}
                 className="dashboard-control inline-flex min-h-11 items-center gap-2 px-1 text-xs text-atlas-secondary focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-water focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-75"
               >
-                {motionEnabled && !prefersReducedMotion ? (
+                {effectiveMotionEnabled ? (
                   <Pause aria-hidden="true" className="size-4" />
                 ) : (
                   <Play aria-hidden="true" className="size-4" />
                 )}
-                {prefersReducedMotion
-                  ? "Reduced motion"
-                  : motionEnabled
-                    ? "Pause motion"
-                    : "Resume motion"}
+                {prefersReducedMotion === null
+                  ? "Checking motion preference"
+                  : prefersReducedMotion
+                    ? "Reduced motion"
+                    : motionEnabled
+                      ? "Pause motion"
+                      : "Resume motion"}
               </button>
             </div>
 
             <AttackGlobe
-              arcs={arcs}
-              motionEnabled={motionEnabled && !prefersReducedMotion}
+              scene={scene}
+              motionEnabled={effectiveMotionEnabled}
               selectedRouteId={selectedRouteId}
             />
           </div>
-        </section>
 
-        <footer className="mt-4 flex flex-col gap-x-8 gap-y-2 border-t border-atlas-line/70 pt-3 text-xs leading-5 text-atlas-secondary sm:mt-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="max-w-3xl">
+          <RouteLedger
+            view={view}
+            selectedRouteId={selectedRouteId}
+            onSelectRoute={setSelectedRouteId}
+          />
+        </section>
+      </div>
+
+      <footer className="dashboard-footer border-t border-atlas-line/70 bg-atlas-water text-xs leading-normal text-atlas-secondary">
+        <div className="dashboard-footer-content mx-auto flex w-full max-w-[1120px] flex-col gap-x-8 gap-y-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-3xl text-pretty">
             Routes show country-level shares of normalized HTTP requests for the
             selected window. Locations are country-level approximations. Arc
             direction and motion are illustrative, not individual attacks.
@@ -260,8 +286,8 @@ export function AttackDashboard() {
               CC BY-NC 4.0
             </a>
           </p>
-        </footer>
-      </div>
+        </div>
+      </footer>
     </main>
   )
 }

@@ -1,5 +1,10 @@
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import type { Viewport } from "next"
+
+export const viewport: Viewport = {
+  viewportFit: "cover",
+}
 
 export default function RootLayout({
   children,

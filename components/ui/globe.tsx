@@ -7,6 +7,7 @@ import { extend, useThree } from "@react-three/fiber";
 import { Canvas } from "@react-three/fiber/legacy";
 import { OrbitControls } from "@react-three/drei";
 import countries from "@/data/globe.json";
+import type { GlobeScene } from "@/components/attack-globe";
 
 declare module "@react-three/fiber" {
   interface ThreeElements {
@@ -18,19 +19,10 @@ declare module "@react-three/fiber" {
 
 extend({ ThreeGlobe });
 
-const RING_PROPAGATION_SPEED = 3;
+const RING_MAX_RADIUS = 3.5;
+const RING_PROPAGATION_SPEED = 1.6;
+const RING_REPEAT_PERIOD = 2400;
 const CAMERA_Z = 330;
-
-export type GlobeArc = {
-  routeId: string;
-  order: number;
-  startLat: number;
-  startLng: number;
-  endLat: number;
-  endLng: number;
-  arcAlt: number;
-  stroke: number;
-};
 
 export type GlobePalette = {
   background: string;
@@ -45,15 +37,12 @@ export type GlobePalette = {
 };
 
 export type GlobeConfig = {
-  pointSize?: number;
   showAtmosphere?: boolean;
   atmosphereAltitude?: number;
   emissiveIntensity?: number;
   shininess?: number;
   arcTime?: number;
   arcLength?: number;
-  rings?: number;
-  maxRings?: number;
   initialPosition?: {
     lat: number;
     lng: number;
@@ -65,27 +54,18 @@ export type GlobeConfig = {
 type WorldProps = {
   globeConfig: GlobeConfig;
   palette: GlobePalette;
-  data: GlobeArc[];
-  motionEnabled?: boolean;
-  selectedRouteId?: string | null;
-};
-
-type GlobePoint = {
-  size: number;
-  lat: number;
-  lng: number;
+  scene: GlobeScene;
+  motionEnabled: boolean;
+  selectedRouteId: string | null;
 };
 
 const DEFAULT_CONFIG: Required<GlobeConfig> = {
-  pointSize: 1,
   showAtmosphere: true,
   atmosphereAltitude: 0.12,
   emissiveIntensity: 0.12,
   shininess: 0.82,
   arcTime: 2400,
   arcLength: 0.34,
-  rings: 1,
-  maxRings: 3,
   initialPosition: { lat: 18, lng: -18 },
   autoRotate: true,
   autoRotateSpeed: 0.4,
@@ -94,9 +74,9 @@ const DEFAULT_CONFIG: Required<GlobeConfig> = {
 export function Globe({
   globeConfig,
   palette,
-  data,
-  motionEnabled = true,
-  selectedRouteId = null,
+  scene,
+  motionEnabled,
+  selectedRouteId,
 }: WorldProps) {
   const globeRef = useRef<ThreeGlobe | null>(null);
   const groupRef = useRef<Group | null>(null);
@@ -144,31 +124,11 @@ export function Globe({
       .hexPolygonColor(() => palette.land);
   }, [config, isInitialized, palette]);
 
-  const points = useMemo(() => {
-    const locations = new Map<string, GlobePoint>();
-    for (const arc of data) {
-      for (const { lat, lng } of [
-        { lat: arc.startLat, lng: arc.startLng },
-        { lat: arc.endLat, lng: arc.endLng },
-      ]) {
-        const key = `${lat},${lng}`;
-        if (!locations.has(key)) {
-          locations.set(key, {
-            size: config.pointSize,
-            lat,
-            lng,
-          });
-        }
-      }
-    }
-    return [...locations.values()];
-  }, [config.pointSize, data]);
-
   useEffect(() => {
     const globe = globeRef.current;
     if (!globe || !isInitialized) return;
 
-    const arcs = data.map((arc, index) => {
+    const arcs = scene.arcs.map((arc, index) => {
       const selected = arc.routeId === selectedRouteId;
       return {
         ...arc,
@@ -192,30 +152,29 @@ export function Globe({
       .arcDashGap(motionEnabled ? 1 : 0)
       .arcDashAnimateTime(motionEnabled ? config.arcTime : 0)
       .arcsTransitionDuration(motionEnabled ? 450 : 0)
-      .pointsData(points)
+      .pointsData(scene.locations)
+      .pointLat("lat")
+      .pointLng("lng")
       .pointColor(() => palette.route)
       .pointsMerge(true)
       .pointAltitude(0.015)
       .pointRadius(0.6)
-      .ringsData([])
-      .ringColor(() => palette.atmosphere)
-      .ringMaxRadius(config.maxRings)
+      .ringsData(motionEnabled ? scene.locations : [])
+      .ringLat("lat")
+      .ringLng("lng")
+      .ringColor(() => [palette.route + "55", palette.route + "00"])
+      .ringMaxRadius(RING_MAX_RADIUS)
       .ringPropagationSpeed(RING_PROPAGATION_SPEED)
-      .ringRepeatPeriod(
-        (config.arcTime * config.arcLength) / Math.max(config.rings, 1),
-      );
+      .ringRepeatPeriod(RING_REPEAT_PERIOD);
   }, [
     config.arcLength,
     config.arcTime,
-    config.maxRings,
-    config.rings,
-    data,
     isInitialized,
     motionEnabled,
-    palette.atmosphere,
     palette.route,
     palette.selectedRoute,
-    points,
+    scene.arcs,
+    scene.locations,
     selectedRouteId,
   ]);
 
@@ -236,9 +195,9 @@ export function Globe({
 function WorldContents({
   globeConfig,
   palette,
-  data,
-  motionEnabled = true,
-  selectedRouteId = null,
+  scene,
+  motionEnabled,
+  selectedRouteId,
 }: WorldProps) {
   const { size } = useThree();
   const config = useMemo(
@@ -267,7 +226,7 @@ function WorldContents({
       <Globe
         globeConfig={globeConfig}
         palette={palette}
-        data={data}
+        scene={scene}
         motionEnabled={motionEnabled}
         selectedRouteId={selectedRouteId}
       />

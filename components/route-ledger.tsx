@@ -31,8 +31,11 @@ export function RouteLedger({
       : undefined
 
   return (
-    <aside aria-labelledby="route-ledger-title" className="min-w-0">
-      <div className="flex min-h-11 items-center justify-between gap-3 border-b border-atlas-line/70 pb-2">
+    <aside
+      aria-labelledby="route-ledger-title"
+      className="route-ledger flex min-h-0 min-w-0 flex-col"
+    >
+      <div className="flex min-h-11 shrink-0 items-center justify-between gap-3 border-b border-atlas-line/70 pb-2">
         <h2
           id="route-ledger-title"
           className="text-sm font-semibold text-atlas-main"
@@ -48,11 +51,11 @@ export function RouteLedger({
         <div
           role="alert"
           aria-label="Delayed update"
-          className="mt-3 text-sm text-atlas-main"
+          className="mt-3 shrink-0 text-sm text-atlas-main"
         >
-          <p className="font-semibold text-atlas-amber">Delayed update</p>
-          <p className="mt-1 leading-5 break-words">{view.error}</p>
-          <p className="mt-1 text-xs leading-5 text-atlas-secondary">
+          <p className="font-semibold text-atlas-warning">Delayed update</p>
+          <p className="mt-1 leading-normal break-words">{view.error}</p>
+          <p className="mt-1 text-xs leading-normal text-atlas-secondary">
             Showing the previous snapshot.
           </p>
         </div>
@@ -62,15 +65,15 @@ export function RouteLedger({
         <div
           role="alert"
           aria-label="Radar unavailable"
-          className="mt-3 text-sm text-atlas-main"
+          className="mt-3 shrink-0 text-sm text-atlas-main"
         >
-          <p className="font-semibold text-atlas-amber">Radar unavailable</p>
-          <p className="mt-1 leading-5 break-words">{view.error}</p>
+          <p className="font-semibold text-atlas-danger">Radar unavailable</p>
+          <p className="mt-1 leading-normal break-words">{view.error}</p>
         </div>
       )}
 
       {view.kind === "loading" && (
-        <p className="mt-4 text-sm leading-5 text-atlas-secondary">
+        <p className="mt-4 shrink-0 text-sm leading-normal text-atlas-secondary">
           {view.isFetching ? "Checking Radar…" : "Waiting for Radar…"}
         </p>
       )}
@@ -78,45 +81,52 @@ export function RouteLedger({
       {snapshot && (
         <>
           {snapshot.routes.length > 0 ? (
-            <ul className="mt-1 flex max-h-[40svh] flex-col gap-0 overflow-y-auto overscroll-contain lg:max-h-[64svh]">
-              {snapshot.routes.map((route, index) => {
-                const selected = selectedRouteId === route.id
-                const unmapped = hasMissingCoordinates(route)
+            <div
+              role="region"
+              aria-labelledby="route-ledger-title"
+              tabIndex={0}
+              className="route-ledger-rows mt-1"
+            >
+              <ul className="flex flex-col gap-0">
+                {snapshot.routes.map((route, index) => {
+                  const selected = selectedRouteId === route.id
+                  const unmapped = hasMissingCoordinates(route)
 
-                return (
-                  <li key={route.id}>
-                    <button
-                      type="button"
-                      onClick={() => onSelectRoute(route.id)}
-                      aria-pressed={selected}
-                      aria-label={`${routeLabel(route)}, ${route.percent.toFixed(2)} percent of normalized HTTP requests${unmapped ? ", coordinates unavailable" : ""}`}
-                      className={`route-index-row grid min-h-11 w-full grid-cols-[1.5rem_minmax(0,1fr)_5rem] items-center gap-2 border-b border-atlas-line/70 py-2.5 pr-2 pl-3 text-left text-atlas-main focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:outline-none focus-visible:ring-inset ${selected ? "bg-atlas-amber/10" : ""}`}
-                    >
-                      <span
-                        className={`font-mono text-xs tabular-nums ${selected ? "text-atlas-main" : "text-atlas-secondary"}`}
+                  return (
+                    <li key={route.id}>
+                      <button
+                        type="button"
+                        onClick={() => onSelectRoute(route.id)}
+                        aria-pressed={selected}
+                        aria-label={`${routeLabel(route)}, ${route.percent.toFixed(2)} percent of normalized HTTP requests${unmapped ? ", coordinates unavailable" : ""}`}
+                        className={`route-index-row grid min-h-11 w-full grid-cols-[1.5rem_minmax(0,1fr)_5rem] items-center gap-2 border-b border-atlas-line/70 py-2.5 pr-2 pl-3 text-left text-atlas-main focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:outline-none focus-visible:ring-inset ${selected ? "bg-atlas-route-subtle" : ""}`}
                       >
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-sm leading-5 font-medium break-words">
-                          {routeLabel(route)}
+                        <span
+                          className={`font-mono text-xs tabular-nums ${selected ? "text-atlas-main" : "text-atlas-secondary"}`}
+                        >
+                          {String(index + 1).padStart(2, "0")}
                         </span>
-                        {unmapped && (
-                          <span className="mt-0.5 block text-xs leading-4 text-atlas-secondary">
-                            Coordinates unavailable
+                        <span className="min-w-0">
+                          <span className="block text-sm leading-normal font-medium break-words">
+                            {routeLabel(route)}
                           </span>
-                        )}
-                      </span>
-                      <span className="w-20 text-right font-mono text-xs text-atlas-route tabular-nums">
-                        {route.percent.toFixed(2)}%
-                      </span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
+                          {unmapped && (
+                            <span className="mt-0.5 block text-xs leading-normal text-atlas-secondary">
+                              Coordinates unavailable
+                            </span>
+                          )}
+                        </span>
+                        <span className="w-20 text-right font-mono text-xs text-atlas-route tabular-nums">
+                          {route.percent.toFixed(2)}%
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
           ) : (
-            <p className="mt-3 text-sm leading-5 text-atlas-secondary">
+            <p className="mt-3 shrink-0 text-sm leading-normal text-atlas-secondary">
               No ranked routes in this window.
             </p>
           )}
