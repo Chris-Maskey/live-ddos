@@ -11,6 +11,32 @@ type DashboardHeaderProps = {
   onRefresh: () => void
 }
 
+const ordinalDay = (day: number) => {
+  const remainder = day % 100
+  const suffix =
+    remainder >= 11 && remainder <= 13
+      ? "th"
+      : day % 10 === 1
+        ? "st"
+        : day % 10 === 2
+          ? "nd"
+          : day % 10 === 3
+            ? "rd"
+            : "th"
+
+  return `${day}${suffix}`
+}
+
+const formatSnapshotTimestamp = (timestamp: string) => {
+  const date = new Date(timestamp)
+  const monthAndYear = new Intl.DateTimeFormat("en-GB", {
+    month: "long",
+    year: "numeric",
+  }).format(date)
+
+  return `${ordinalDay(date.getDate())} ${monthAndYear}, ${date.toLocaleTimeString()}`
+}
+
 export function DashboardHeader({
   range,
   view,
@@ -21,6 +47,9 @@ export function DashboardHeader({
     view.kind === "ready" || view.kind === "empty" || view.kind === "stale"
       ? view.snapshot
       : undefined
+  const updatedAt = snapshot
+    ? formatSnapshotTimestamp(snapshot.lastUpdated)
+    : null
   const isFetching = view.isFetching
   const statusLabel =
     view.kind === "stale"
@@ -67,10 +96,10 @@ export function DashboardHeader({
             <p className="min-w-0 border-l border-atlas-line/70 pl-3">
               <time
                 dateTime={snapshot.lastUpdated}
-                aria-label="Snapshot last updated"
-                className="inline-block max-w-[10.5rem] truncate text-right font-mono text-[11px] tabular-nums"
+                aria-label={`Snapshot last updated ${updatedAt ?? ""}`}
+                className="inline-block whitespace-nowrap text-right font-mono text-[11px] tabular-nums"
               >
-                {new Date(snapshot.lastUpdated).toLocaleString()}
+                {updatedAt}
               </time>
             </p>
           )}

@@ -237,7 +237,7 @@
 @media (max-height: 40rem) and (max-width: 64rem) and (orientation: portrait) {
   .route-index-layout {
     gap: 0.5rem;
-    grid-template-rows: minmax(7rem, 1fr) minmax(6rem, 0.9fr);
+    grid-template-rows: minmax(7rem, 0.9fr) minmax(7rem, 1.1fr);
   }
 }
 
