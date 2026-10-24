@@ -1,4 +1,4 @@
-# Live DDoS map specification
+# DDoS Atlas specification
 
 Status: Baseline approved for implementation on 2026-10-21.
 

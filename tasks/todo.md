@@ -1,4 +1,4 @@
-# Live DDoS map tasks
+# DDoS Atlas tasks
 
 Status: Completed on 2026-10-21 with the verification limits recorded below. See [plan.md](plan.md) and [SPEC.md](../SPEC.md).
 Check off a task only after its acceptance criteria and verification pass.

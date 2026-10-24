@@ -1,4 +1,4 @@
-# Live DDoS map
+# DDoS Atlas
 
 A small dashboard for Cloudflare Radar's aggregated HTTP DDoS data. The globe draws ranked origin-country to target-country pairs. Its moving arcs are a visual effect, not a stream of new attack events.
 

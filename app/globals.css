@@ -13,7 +13,9 @@
   --color-atlas-main: var(--atlas-main);
   --color-atlas-secondary: var(--atlas-secondary);
   --color-atlas-route: var(--atlas-route);
-  --color-atlas-amber: var(--atlas-amber);
+  --color-atlas-route-subtle: var(--atlas-route-subtle);
+  --color-atlas-warning: var(--atlas-warning);
+  --color-atlas-danger: var(--atlas-danger);
   --color-atlas-line: var(--atlas-line);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -56,17 +58,19 @@
 }
 
 :root {
-  --atlas-water: #f3f4f1;
-  --atlas-panel: #e4e7e2;
-  --atlas-main: #202a2f;
-  --atlas-secondary: #57656a;
-  --atlas-route: #2e6d88;
-  --atlas-amber: #be554c;
-  --atlas-line: #c8cec8;
-  --atlas-land: rgba(87, 101, 106, 0.32);
-  --atlas-globe-highlight: #f3f4f1;
-  --font-display:
-    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --atlas-water: #f5faf9;
+  --atlas-panel: #e6f1ef;
+  --atlas-main: #172425;
+  --atlas-secondary: #485958;
+  --atlas-route: #006770;
+  --atlas-route-subtle: #dfebeb;
+  --atlas-route-selected: #005259;
+  --atlas-warning: #84550f;
+  --atlas-danger: #96372f;
+  --atlas-line: #d4dddc;
+  --atlas-land: rgba(77, 95, 93, 0.32);
+  --atlas-globe-highlight: #f5faf9;
+  --font-display: "Iowan Old Style", "Baskerville", Georgia, serif;
   --font-ui:
     system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-code: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
@@ -82,14 +86,14 @@
   --secondary-foreground: var(--atlas-main);
   --muted: var(--atlas-panel);
   --muted-foreground: var(--atlas-secondary);
-  --accent: var(--atlas-amber);
+  --accent: var(--atlas-route);
   --accent-foreground: var(--atlas-water);
-  --destructive: #b42318;
+  --destructive: var(--atlas-danger);
   --border: var(--atlas-line);
   --input: var(--atlas-line);
   --ring: var(--atlas-route);
   --chart-1: var(--atlas-route);
-  --chart-2: var(--atlas-amber);
+  --chart-2: var(--atlas-warning);
   --chart-3: var(--atlas-secondary);
   --chart-4: var(--atlas-main);
   --chart-5: var(--atlas-panel);
@@ -98,22 +102,25 @@
   --sidebar-foreground: var(--atlas-main);
   --sidebar-primary: var(--atlas-route);
   --sidebar-primary-foreground: var(--atlas-water);
-  --sidebar-accent: var(--atlas-amber);
+  --sidebar-accent: var(--atlas-route);
   --sidebar-accent-foreground: var(--atlas-water);
   --sidebar-border: var(--atlas-line);
   --sidebar-ring: var(--atlas-route);
 }
 
 .dark {
-  --atlas-water: #171d1b;
-  --atlas-panel: #222a27;
-  --atlas-main: #e8ece6;
-  --atlas-secondary: #a2aba4;
-  --atlas-route: #86bac2;
-  --atlas-amber: #e47c68;
-  --atlas-line: #414944;
-  --atlas-land: rgba(162, 171, 164, 0.42);
-  --atlas-globe-highlight: #e8ece6;
+  --atlas-water: #091111;
+  --atlas-panel: #162020;
+  --atlas-main: #ddebea;
+  --atlas-secondary: #c0d2d0;
+  --atlas-route: #6eccd1;
+  --atlas-route-subtle: #111f20;
+  --atlas-route-selected: #7bdad9;
+  --atlas-warning: #e5ab66;
+  --atlas-danger: #fe9c8f;
+  --atlas-line: #3b4544;
+  --atlas-land: rgba(154, 172, 170, 0.42);
+  --atlas-globe-highlight: #ddebea;
   --background: var(--atlas-water);
   --foreground: var(--atlas-main);
   --card: var(--atlas-panel);
@@ -126,14 +133,14 @@
   --secondary-foreground: var(--atlas-main);
   --muted: var(--atlas-panel);
   --muted-foreground: var(--atlas-secondary);
-  --accent: var(--atlas-amber);
+  --accent: var(--atlas-route);
   --accent-foreground: var(--atlas-water);
-  --destructive: #f97066;
+  --destructive: var(--atlas-danger);
   --border: var(--atlas-line);
   --input: var(--atlas-line);
   --ring: var(--atlas-route);
   --chart-1: var(--atlas-route);
-  --chart-2: var(--atlas-amber);
+  --chart-2: var(--atlas-warning);
   --chart-3: var(--atlas-secondary);
   --chart-4: var(--atlas-main);
   --chart-5: var(--atlas-panel);
@@ -141,15 +148,114 @@
   --sidebar-foreground: var(--atlas-main);
   --sidebar-primary: var(--atlas-route);
   --sidebar-primary-foreground: var(--atlas-water);
-  --sidebar-accent: var(--atlas-amber);
+  --sidebar-accent: var(--atlas-route);
   --sidebar-accent-foreground: var(--atlas-water);
   --sidebar-border: var(--atlas-line);
   --sidebar-ring: var(--atlas-route);
 }
 
+.dashboard-page {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: 100dvh;
+  overflow: hidden;
+  padding-top: calc(1rem + env(safe-area-inset-top));
+}
+
+.dashboard-content {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  padding-inline: max(1rem, env(safe-area-inset-left))
+    max(1rem, env(safe-area-inset-right));
+}
+
+.dashboard-footer {
+  padding-top: 0.75rem;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+}
+
+.dashboard-footer-content {
+  padding-inline: max(1rem, env(safe-area-inset-left))
+    max(1rem, env(safe-area-inset-right));
+}
+
+.route-index-layout {
+  grid-template-rows: minmax(11rem, 1.15fr) minmax(8rem, 0.85fr);
+}
+
+.route-index-globe {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+}
+
+.route-index-globe > [role="group"] {
+  width: 100%;
+  height: 100%;
+  max-height: 500px;
+  min-height: 0;
+  align-self: center;
+}
+
+.route-ledger {
+  min-height: 0;
+}
+
+.route-ledger-rows {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (min-width: 40rem) {
+  .dashboard-content,
+  .dashboard-footer-content {
+    padding-inline: max(1.5rem, env(safe-area-inset-left))
+      max(1.5rem, env(safe-area-inset-right));
+  }
+}
+
 @media (min-width: 64rem) {
-  .route-index-globe > [role="group"] {
-    height: clamp(300px, min(34vw, 64svh), 500px);
+  .dashboard-content,
+  .dashboard-footer-content {
+    padding-inline: max(2rem, env(safe-area-inset-left))
+      max(2rem, env(safe-area-inset-right));
+  }
+}
+
+@media (min-width: 64rem),
+  (min-width: 52rem) and (orientation: landscape) {
+  .route-index-layout {
+    grid-template-columns: minmax(0, 1.38fr) minmax(18rem, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+}
+
+@media (max-height: 40rem) and (max-width: 64rem) and (orientation: portrait) {
+  .route-index-layout {
+    gap: 0.5rem;
+    grid-template-rows: minmax(7rem, 0.9fr) minmax(7rem, 1.1fr);
+  }
+}
+
+@media (max-height: 24rem) {
+  .dashboard-page {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    grid-template-rows: auto auto;
+  }
+
+  .dashboard-content {
+    grid-template-rows: auto auto;
+    padding-bottom: 1rem;
+  }
+
+  .route-index-layout {
+    min-height: 26rem;
   }
 }
 
@@ -177,7 +283,7 @@
   inset-block: 0.5rem;
   left: 0;
   width: 2px;
-  background: var(--atlas-amber);
+  background: var(--atlas-route-selected);
   content: "";
   opacity: 0;
   pointer-events: none;

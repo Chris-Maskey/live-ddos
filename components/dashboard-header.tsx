@@ -11,6 +11,32 @@ type DashboardHeaderProps = {
   onRefresh: () => void
 }
 
+const ordinalDay = (day: number) => {
+  const remainder = day % 100
+  const suffix =
+    remainder >= 11 && remainder <= 13
+      ? "th"
+      : day % 10 === 1
+        ? "st"
+        : day % 10 === 2
+          ? "nd"
+          : day % 10 === 3
+            ? "rd"
+            : "th"
+
+  return `${day}${suffix}`
+}
+
+const formatSnapshotTimestamp = (timestamp: string) => {
+  const date = new Date(timestamp)
+  const monthAndYear = new Intl.DateTimeFormat("en-GB", {
+    month: "long",
+    year: "numeric",
+  }).format(date)
+
+  return `${ordinalDay(date.getDate())} ${monthAndYear}, ${date.toLocaleTimeString()}`
+}
+
 export function DashboardHeader({
   range,
   view,
@@ -21,6 +47,9 @@ export function DashboardHeader({
     view.kind === "ready" || view.kind === "empty" || view.kind === "stale"
       ? view.snapshot
       : undefined
+  const updatedAt = snapshot
+    ? formatSnapshotTimestamp(snapshot.lastUpdated)
+    : null
   const isFetching = view.isFetching
   const statusLabel =
     view.kind === "stale"
@@ -39,22 +68,23 @@ export function DashboardHeader({
             ? "Checking for updates"
             : "Snapshot loaded"
   const statusColor =
-    (view.kind === "stale" && !isFetching) ||
-    (view.kind === "unavailable" && !isFetching)
-      ? "bg-atlas-secondary"
-      : "bg-atlas-route"
+    view.kind === "stale" && !isFetching
+      ? "bg-atlas-warning"
+      : view.kind === "unavailable" && !isFetching
+        ? "bg-atlas-danger"
+        : "bg-atlas-route"
 
   return (
-    <header className="mb-3 sm:mb-4">
-      <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-6 gap-y-1">
-        <p className="text-[15px] font-semibold tracking-tight text-atlas-main">
-          Liveddos
+    <header className="mb-4 border-b border-atlas-line/70 pb-4 sm:mb-5">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <p className="font-mono text-[11px] font-semibold tracking-[0.16em] text-atlas-main uppercase">
+          DDoS Atlas
         </p>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-atlas-secondary">
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-atlas-secondary">
           <p
             role="status"
             aria-live="polite"
-            className="inline-flex h-5 w-[9.5rem] items-center gap-2"
+            className="inline-flex h-5 items-center gap-2 text-[11px]"
           >
             <span
               aria-hidden="true"
@@ -63,21 +93,21 @@ export function DashboardHeader({
             {statusLabel}
           </p>
           {snapshot && (
-            <p>
-              Updated{" "}
+            <p className="min-w-0 border-l border-atlas-line/70 pl-3">
               <time
                 dateTime={snapshot.lastUpdated}
-                className="inline-block w-48 truncate text-right font-mono text-xs tabular-nums"
+                aria-label={`Snapshot last updated ${updatedAt ?? ""}`}
+                className="inline-block whitespace-nowrap text-right font-mono text-[11px] tabular-nums"
               >
-                {new Date(snapshot.lastUpdated).toLocaleString()}
+                {updatedAt}
               </time>
             </p>
           )}
         </div>
       </div>
 
-      <div className="mt-1 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <h1 className="text-[19px] leading-6 font-semibold tracking-tight text-atlas-main">
+      <div className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <h1 className="font-heading text-[clamp(1.5rem,2.5vw,1.9rem)] leading-[1.1] font-semibold tracking-tight text-balance text-atlas-main">
           HTTP DDoS routes
         </h1>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">

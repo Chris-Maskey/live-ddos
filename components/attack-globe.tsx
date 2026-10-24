@@ -3,16 +3,38 @@
 import { Component, type ReactNode, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
+import type { AttackRoute } from "@/lib/attack-data";
 import {
-  type GlobeArc,
   type GlobeConfig,
   type GlobePalette,
 } from "@/components/ui/globe";
 
-type AttackGlobeProps = {
+export type GlobeArc = {
+  routeId: string;
+  order: number;
+  startLat: number;
+  startLng: number;
+  endLat: number;
+  endLng: number;
+  arcAlt: number;
+  stroke: number;
+};
+
+export type GlobeCountryLocation = {
+  code: AttackRoute["origin"]["code"];
+  lat: number;
+  lng: number;
+};
+
+export type GlobeScene = {
   arcs: GlobeArc[];
-  motionEnabled?: boolean;
-  selectedRouteId?: string | null;
+  locations: GlobeCountryLocation[];
+};
+
+type AttackGlobeProps = {
+  scene: GlobeScene;
+  motionEnabled: boolean;
+  selectedRouteId: string | null;
 };
 
 const globeConfig: GlobeConfig = {
@@ -44,7 +66,7 @@ class GlobeErrorBoundary extends Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="grid h-full min-h-[300px] place-items-center px-6 text-center">
+        <div className="grid h-full min-h-0 place-items-center px-6 text-center">
           <p role="status" className="max-w-sm text-sm leading-6 text-atlas-secondary">
             The 3D map is unavailable in this browser. The route list still contains the Radar data.
           </p>
@@ -57,9 +79,9 @@ class GlobeErrorBoundary extends Component<
 }
 
 export function AttackGlobe({
-  arcs,
-  motionEnabled = true,
-  selectedRouteId = null,
+  scene,
+  motionEnabled,
+  selectedRouteId,
 }: AttackGlobeProps) {
   const { resolvedTheme } = useTheme();
   const [palette, setPalette] = useState<GlobePalette | null>(null);
@@ -76,7 +98,7 @@ export function AttackGlobe({
         atmosphere: styles.getPropertyValue("--atlas-route").trim(),
         land: styles.getPropertyValue("--atlas-land").trim(),
         route: styles.getPropertyValue("--atlas-route").trim(),
-        selectedRoute: styles.getPropertyValue("--atlas-amber").trim(),
+        selectedRoute: styles.getPropertyValue("--atlas-route-selected").trim(),
         ambient: styles.getPropertyValue("--atlas-secondary").trim(),
         globeHighlight: styles.getPropertyValue("--atlas-globe-highlight").trim(),
       });
@@ -89,14 +111,14 @@ export function AttackGlobe({
     <div
       role="group"
       aria-label="Interactive globe visualization of mapped country-pair routes. Select a route in the route list to highlight its path on the globe."
-      className="relative h-[clamp(300px,55vw,560px)] w-full overflow-hidden bg-transparent"
+      className="relative h-full min-h-0 w-full overflow-hidden bg-transparent"
     >
       <GlobeErrorBoundary>
         {palette ? (
           <World
             globeConfig={globeConfig}
             palette={palette}
-            data={arcs}
+            scene={scene}
             motionEnabled={motionEnabled}
             selectedRouteId={selectedRouteId}
           />
