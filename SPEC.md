@@ -1,8 +1,8 @@
 # DDoS Atlas specification
 
-Status: Baseline approved for implementation on 2026-10-21.
+Status: Updated for selected-route comparison on 2026-10-24.
 
-Scope: Current dashboard baseline. New features need separate agreement.
+Scope: Dashboard with equivalent-period route comparison and explicit data timestamps.
 
 ## Objective
 
@@ -20,12 +20,18 @@ It does not establish a new audience, hosting platform, or commercial use case.
   `mitigationProduct=DDOS` and `normalization=PERCENTAGE`.
 - Support `1d` and `7d`. Default to `1d`. Request at most 40 country pairs.
 - Preserve Radar's percentages. The returned top pairs need not total 100%.
+- Compare each current pair with the same origin and target codes in Radar's
+  equivalent control period. A missing prior pair means it was not ranked in
+  the previous top 40; its share is unknown, never zero.
+- Show percentage-point change only when the exact pair exists in both
+  periods. Do not describe share change as attack-volume change.
 - Treat each route as an aggregate country pair during the reporting window.
   Arc motion is a display effect, not an individual attack event.
 - Origin countries describe client IP geolocation. Target countries describe
   the attacked zone's billing country. Coordinates are approximate.
-- Distinguish the dataset update time from the application's fetch time.
-  Do not claim an upstream freshness guarantee.
+- Show the actual current reporting window, Radar dataset update time, and
+  cached app provider-fetch time separately. Do not claim an upstream
+  freshness guarantee.
 - Attribute Cloudflare Radar and link to its CC BY-NC 4.0 data license, as
   recorded in the existing [research](docs/research/cloudflare-radar.md).
 
@@ -35,15 +41,19 @@ and additional providers.
 
 ## User behavior
 
-1. Opening `/` loads the default snapshot and a country globe.
-2. Selecting a reporting window loads that range and preserves snapshots by
+1. Opening `/` loads the default report and a country globe.
+2. Selecting a reporting window loads that range and preserves reports by
    range in browser memory.
-3. The ranked list shows each route's origin, target, and normalized percentage.
+3. The ranked list shows each route's origin, target, normalized reported
+   share, and percentage-point change when its exact prior pair is available.
    Routes without coordinates remain in the list and have no globe arc.
 4. Selecting a list entry highlights the corresponding arc when mapped and
-   displays the route's details.
-5. Refresh requests a snapshot through the normal server cache. It does not
-   force a new Cloudflare fetch.
+   shows its details immediately after the row inside the scrollable ledger.
+   Details name the country meanings and show current and prior shares with
+   both actual windows. A pair missing from the prior top 40 has unknown share.
+5. The header shows the actual current window, Radar dataset update time, and
+   app-cached provider-fetch time. It says Refresh checks the app's five-minute
+   cache and does not force a Radar fetch.
 6. The browser checks every five minutes while visible. Returning to the page
    requests an update. Failed requests increase the retry delay to a maximum
    of 30 minutes. Range changes and unmounting cancel pending requests.
@@ -57,34 +67,41 @@ and additional providers.
 
 ## Data contract and server behavior
 
-`GET /api/attacks?range=1d|7d` returns an `AttackSnapshot`. Omitting `range`
+`GET /api/attacks?range=1d|7d` returns an `AttackReport`. Omitting `range`
 uses `1d`. The contract lives in [lib/attack-data.ts](lib/attack-data.ts):
 
-- `range`: requested reporting range.
-- `window`: actual `startTime` and `endTime` returned by Radar.
-- `lastUpdated`: Radar's dataset update timestamp.
-- `fetchedAt`: application's pair-response fetch timestamp, retained with the
-  cached pair response.
-- `normalization`: always `PERCENTAGE`.
-- `units`: unique unit strings extracted from Radar metadata.
-- `routes`: at most 40 entries with a snapshot-local ID, origin and target
-  country details, percentage, and `sameCountry` flag. Country coordinates
-  may be `null`. Route IDs are not persistent event identifiers.
+- `current`: the existing `AttackSnapshot`, including current window, Radar
+  `lastUpdated`, app `fetchedAt`, normalization, units, and up to 40 routes.
+- `comparison`: the actual control-period window returned by Radar and up to
+  40 `{ originCode, targetCode, percent }` shares. It has no route IDs,
+  coordinates, or app fetch timestamp.
+
+For `1d`, request Radar's `1dcontrol` period, which represents the same
+weekday one week earlier. For `7d`, request `7dcontrol`, the prior 7-day
+window. Use actual window metadata from both Radar responses. The browser
+validates the complete envelope with `isAttackReport` and matches comparison
+shares by origin and target country codes. A missing pair is not ranked in the
+prior top 40 and has unknown share, never zero.
 
 Validate external JSON before use. Require valid timestamps, a positive time
 window, uppercase two-letter country codes, finite percentages from 0 to 100,
 and coordinates within geographic bounds. Drop malformed pair rows; reject a
 nonempty response if no valid pair remains. Preserve valid routes when
-coordinate rows are missing or invalid. Validate the snapshot again in the
-browser.
+coordinate rows are missing or invalid. Validate the current snapshot and
+complete report envelope again in the browser.
 
 Keep `CLOUDFLARE_API_TOKEN` on the server. Cloudflare requests have a ten-second
-timeout. Assemble snapshots from validated pair responses cached by range with
-a five-minute revalidation interval and location responses cached for one day.
-Use independent cache scopes, as recorded in [ADR 0002](docs/adr/0002-independent-radar-caches.md).
-Request unique country codes in batches of at most two. A failed location
-request fails that snapshot load. Next.js can serve cached data while refreshing
-it in the background; a successful app request does not guarantee new data.
+timeout. Fetch current and control pair data in parallel through separate
+five-minute cache entries. Validate the current pair response before caching
+it with its provider-fetch timestamp. Normalize and cache the comparison as
+only its actual window and route shares. Cache location responses for one day,
+independent of pair data, as recorded in
+[ADR 0002](docs/adr/0002-independent-radar-caches.md) and
+[ADR 0003](docs/adr/0003-radar-control-period-comparisons.md). Request unique
+country codes for current routes only, in batches of at most two. A failed
+control or location request fails that report load. Next.js can serve cached
+data while refreshing it in the background; a successful app request does not
+guarantee a new Radar fetch.
 
 API responses use `Cache-Control: no-store`. Expected errors have the shape
 `{ error: { code, message } }`:
@@ -163,9 +180,15 @@ and the repository's Prettier configuration for formatting touched code.
 
 ## Acceptance and verification
 
-- Both ranges return a validated snapshot or the documented error response.
+- Both ranges return a validated report with current and equivalent control
+  data or the documented error response.
 - Percentages and timestamps survive normalization without invented values.
   Invalid rows and coordinates follow the rules above.
+- Deltas match exact country-code pairs and are expressed in percentage points.
+  Missing prior top-40 pairs retain unknown share rather than zero.
+- The header distinguishes the actual current window, Radar dataset update,
+  and app-cached provider-fetch timestamps. Refresh wording describes the
+  five-minute app cache accurately.
 - The list and globe use the same selected snapshot. Selecting a mapped route
   highlights its arc. Missing coordinates do not remove a valid list entry.
 - Polling respects page visibility and retry limits. Failed updates preserve
@@ -180,18 +203,14 @@ Add a runnable regression check for nontrivial behavior changes. Verify API
 errors, polling, range changes, selection, reduced motion, and globe fallback
 at runtime when those paths change. No numeric coverage target is established.
 
-Baseline checked on 2026-10-21: 15 data tests, the Radar cache/API check, type
-checking, lint, and the production build passed. Both authenticated reporting
-ranges returned valid snapshots. Browser verification covered selection,
+Previous baseline checks on 2026-10-21 passed: 15 data tests, the Radar cache
+and API check, type checking, lint, and the production build. Both authenticated
+reporting ranges returned valid snapshots. Browser verification covered selection,
 refresh recovery, cancellation, retry timing, reduced motion, narrow layout,
 and globe fallback. Details and limitations are recorded in the task list.
 There is no permanent automated browser suite or CI workflow.
 
 ## Open questions and known gaps
 
-- Should the retained route list stay visible when an update fails? Currently
-  the error message replaces the list while the globe retains its snapshot.
-- Should the UI display the actual reporting window and fetch time? The API
-  preserves both, but the page currently displays the dataset update time.
 - Who is the primary audience, and what is the next product change? This
-  draft establishes the baseline only.
+  remains open.

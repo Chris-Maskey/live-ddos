@@ -1,14 +1,18 @@
 "use client"
 
-import type { AttackSnapshot } from "@/lib/attack-data"
+import {
+  compareAttackRoute,
+  getAttackRouteKey,
+  type AttackReport,
+} from "@/lib/attack-data"
 import type { DashboardViewState } from "@/lib/dashboard-view-state"
 
-type Route = AttackSnapshot["routes"][number]
+type Route = AttackReport["current"]["routes"][number]
 
 type RouteLedgerProps = {
   view: DashboardViewState
-  selectedRouteId: string | null
-  onSelectRoute: (routeId: string) => void
+  selectedRouteKey: string | null
+  onSelectRoute: (routeKey: string) => void
 }
 
 const routeLabel = (route: Route) =>
@@ -20,15 +24,29 @@ const hasMissingCoordinates = (route: Route) =>
   route.target.latitude === null ||
   route.target.longitude === null
 
+const formatTimestamp = (timestamp: string) =>
+  `${new Intl.DateTimeFormat("en-CA", {
+    dateStyle: "medium",
+    timeStyle: "medium",
+    timeZone: "UTC",
+  }).format(new Date(timestamp))} UTC`
+
+const formatWindow = (window: AttackReport["current"]["window"]) =>
+  `${formatTimestamp(window.startTime)} to ${formatTimestamp(window.endTime)}`
+
+const formatPpChange = (changePp: number) =>
+  `${changePp > 0 ? "+" : ""}${changePp.toFixed(2)} pp`
+
 export function RouteLedger({
   view,
-  selectedRouteId,
+  selectedRouteKey,
   onSelectRoute,
 }: RouteLedgerProps) {
-  const snapshot =
+  const report =
     view.kind === "ready" || view.kind === "empty" || view.kind === "stale"
-      ? view.snapshot
+      ? view.report
       : undefined
+  const snapshot = report?.current
 
   return (
     <aside
@@ -43,7 +61,7 @@ export function RouteLedger({
           Top routes
         </h2>
         <span className="shrink-0 text-xs text-atlas-secondary">
-          Request share
+          Reported share · change
         </span>
       </div>
 
@@ -56,7 +74,7 @@ export function RouteLedger({
           <p className="font-semibold text-atlas-warning">Delayed update</p>
           <p className="mt-1 leading-normal break-words">{view.error}</p>
           <p className="mt-1 text-xs leading-normal text-atlas-secondary">
-            Showing the previous snapshot.
+            Showing the previous report.
           </p>
         </div>
       )}
@@ -89,16 +107,31 @@ export function RouteLedger({
             >
               <ul className="flex flex-col gap-0">
                 {snapshot.routes.map((route, index) => {
-                  const selected = selectedRouteId === route.id
+                  const routeKey = getAttackRouteKey(
+                    route.origin.code,
+                    route.target.code,
+                  )
+                  const selected = selectedRouteKey === routeKey
                   const unmapped = hasMissingCoordinates(route)
+                  const comparison = report
+                    ? compareAttackRoute(route, report.comparison)
+                    : { kind: "not-ranked" as const }
+                  const comparisonLabel =
+                    comparison.kind === "ranked"
+                      ? formatPpChange(comparison.changePp)
+                      : "Change unknown"
+                  const accessibleComparison =
+                    comparison.kind === "ranked"
+                      ? `change ${formatPpChange(comparison.changePp)} from the previous reporting window`
+                      : "previous share unknown because this pair was not ranked in the previous top 40"
 
                   return (
                     <li key={route.id}>
                       <button
                         type="button"
-                        onClick={() => onSelectRoute(route.id)}
+                        onClick={() => onSelectRoute(routeKey)}
                         aria-pressed={selected}
-                        aria-label={`${routeLabel(route)}, ${route.percent.toFixed(2)} percent of normalized HTTP requests${unmapped ? ", coordinates unavailable" : ""}`}
+                        aria-label={`${routeLabel(route)}, ${route.percent.toFixed(2)} percent normalized reported share, ${accessibleComparison}${unmapped ? ", coordinates unavailable" : ""}`}
                         className={`route-index-row grid min-h-11 w-full grid-cols-[1.5rem_minmax(0,1fr)_5rem] items-center gap-2 border-b border-atlas-line/70 py-2.5 pr-2 pl-3 text-left text-atlas-main focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:outline-none focus-visible:ring-inset ${selected ? "bg-atlas-route-subtle" : ""}`}
                       >
                         <span
@@ -116,10 +149,65 @@ export function RouteLedger({
                             </span>
                           )}
                         </span>
-                        <span className="w-20 text-right font-mono text-xs text-atlas-route tabular-nums">
-                          {route.percent.toFixed(2)}%
+                        <span className="w-20 text-right font-mono text-xs tabular-nums">
+                          <span className="block text-atlas-route">
+                            {route.percent.toFixed(2)}%
+                          </span>
+                          <span className="block text-[10px] text-atlas-secondary">
+                            {comparisonLabel}
+                          </span>
                         </span>
                       </button>
+                      {selected && report && (
+                        <div
+                          role="group"
+                          aria-label={`${routeLabel(route)} details`}
+                          className="border-b border-atlas-line/70 bg-atlas-route-subtle px-3 py-3 text-xs leading-normal text-atlas-secondary"
+                        >
+                          <dl className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <dt className="font-semibold text-atlas-main">
+                                Origin · {route.origin.name} ({route.origin.code})
+                              </dt>
+                              <dd>Client IP country</dd>
+                            </div>
+                            <div>
+                              <dt className="font-semibold text-atlas-main">
+                                Target · {route.target.name} ({route.target.code})
+                              </dt>
+                              <dd>
+                                Attacked zone billing country, not server location
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="font-semibold text-atlas-main">
+                                Current reported share
+                              </dt>
+                              <dd className="font-mono tabular-nums">
+                                {route.percent.toFixed(2)}% ·{" "}
+                                {formatWindow(snapshot.window)}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="font-semibold text-atlas-main">
+                                Previous reported share
+                              </dt>
+                              <dd className="font-mono tabular-nums">
+                                {comparison.kind === "ranked"
+                                  ? `${comparison.previousPercent.toFixed(2)}% · `
+                                  : "Unknown · "}
+                                {formatWindow(report.comparison.window)}
+                              </dd>
+                            </div>
+                          </dl>
+                          {comparison.kind === "not-ranked" && (
+                            <p className="mt-3 text-atlas-warning">
+                              Not ranked in the previous top 40. Its previous
+                              share is unknown, not zero.
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </li>
                   )
                 })}

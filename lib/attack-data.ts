@@ -31,6 +31,29 @@ export type AttackSnapshot = {
   routes: AttackRoute[];
 };
 
+export type AttackRouteShare = {
+  originCode: string;
+  targetCode: string;
+  percent: number;
+};
+
+export type AttackComparison = {
+  window: AttackSnapshot["window"];
+  shares: AttackRouteShare[];
+};
+
+export type AttackReport = {
+  current: AttackSnapshot;
+  comparison: AttackComparison;
+};
+
+export type AttackRouteComparison =
+  | { kind: "ranked"; previousPercent: number; changePp: number }
+  | { kind: "not-ranked" };
+
+export const getAttackRouteKey = (originCode: string, targetCode: string) =>
+  `${originCode}:${targetCode}`;
+
 type RadarPair = {
   originCode: string;
   originName: string;
@@ -126,6 +149,54 @@ export function isAttackSnapshot(value: unknown): value is AttackSnapshot {
       route.sameCountry === (origin.code === target.code)
     );
   });
+}
+
+export function isAttackReport(value: unknown): value is AttackReport {
+  if (
+    !isRecord(value) ||
+    !isAttackSnapshot(value.current) ||
+    !isRecord(value.comparison) ||
+    !isRecord(value.comparison.window) ||
+    !isTimestamp(value.comparison.window.startTime) ||
+    !isTimestamp(value.comparison.window.endTime) ||
+    Date.parse(value.comparison.window.endTime) <=
+      Date.parse(value.comparison.window.startTime) ||
+    !Array.isArray(value.comparison.shares) ||
+    value.comparison.shares.length > 40
+  ) {
+    return false;
+  }
+
+  return value.comparison.shares.every(
+    (share) =>
+      isRecord(share) &&
+      typeof share.originCode === "string" &&
+      /^[A-Z]{2}$/.test(share.originCode) &&
+      typeof share.targetCode === "string" &&
+      /^[A-Z]{2}$/.test(share.targetCode) &&
+      typeof share.percent === "number" &&
+      Number.isFinite(share.percent) &&
+      share.percent >= 0 &&
+      share.percent <= 100,
+  );
+}
+
+export function compareAttackRoute(
+  route: Pick<AttackRoute, "origin" | "target" | "percent">,
+  comparison: AttackComparison,
+): AttackRouteComparison {
+  const previous = comparison.shares.find(
+    (share) =>
+      share.originCode === route.origin.code &&
+      share.targetCode === route.target.code,
+  );
+
+  if (!previous) return { kind: "not-ranked" };
+  return {
+    kind: "ranked",
+    previousPercent: previous.percent,
+    changePp: route.percent - previous.percent,
+  };
 }
 
 const getPairData = (payload: unknown): RadarPairData => {
@@ -302,5 +373,24 @@ export function normalizeRadarSnapshot(
     normalization: "PERCENTAGE",
     units: [...new Set(units)],
     routes,
+  };
+}
+
+export function normalizeRadarComparison(payload: unknown): AttackComparison {
+  const pairData = getPairData(payload);
+  if (pairData.normalization !== "PERCENTAGE") {
+    throw new InvalidRadarDataError("Radar did not return percentage-normalized data.");
+  }
+
+  return {
+    window: {
+      startTime: pairData.startTime,
+      endTime: pairData.endTime,
+    },
+    shares: pairData.pairs.map((pair) => ({
+      originCode: pair.originCode,
+      targetCode: pair.targetCode,
+      percent: pair.percent,
+    })),
   };
 }

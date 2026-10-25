@@ -1,4 +1,4 @@
-import { getRadarSnapshot, RadarRequestError } from "@/lib/cloudflare-radar";
+import { getRadarReport, RadarRequestError } from "@/lib/cloudflare-radar";
 import type { RadarRange } from "@/lib/attack-data";
 
 const isRadarRange = (value: string | null): value is RadarRange =>
@@ -14,8 +14,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    const snapshot = await getRadarSnapshot(rangeParam);
-    return Response.json(snapshot, {
+    const report = await getRadarReport(rangeParam);
+    return Response.json(report, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
