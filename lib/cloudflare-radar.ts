@@ -5,8 +5,9 @@ import {
   getLocations,
   getRadarLocationCodes,
   InvalidRadarDataError,
+  normalizeRadarComparison,
   normalizeRadarSnapshot,
-  type AttackSnapshot,
+  type AttackReport,
   type RadarRange,
 } from "@/lib/attack-data";
 
@@ -15,6 +16,7 @@ const REVALIDATE_SECONDS = 300;
 const REQUEST_TIMEOUT_MS = 10_000;
 const LOCATION_BATCH_SIZE = 2;
 const LOCATION_REVALIDATE_SECONDS = 86_400;
+type RadarControlRange = `${RadarRange}control`;
 
 export type RadarFailureKind = "missing-token" | "unauthorized" | "rate-limited" | "upstream" | "invalid-data";
 
@@ -83,6 +85,27 @@ const getCachedPairs = unstable_cache(async (range: RadarRange) => {
   tags: ["radar-attack-snapshot"],
 });
 
+const getCachedComparison = unstable_cache(
+  async (range: RadarControlRange) => {
+    const attacksUrl = new URL(`${API_ROOT}/attacks/layer7/top/attacks`);
+    attacksUrl.search = new URLSearchParams({
+      dateRange: range,
+      limit: "40",
+      mitigationProduct: "DDOS",
+      normalization: "PERCENTAGE",
+      format: "JSON",
+    }).toString();
+
+    const payload = await readJson(attacksUrl, getToken());
+    return normalizeRadarComparison(payload);
+  },
+  ["cloudflare-radar-control-pairs-v1"],
+  {
+    revalidate: REVALIDATE_SECONDS,
+    tags: ["radar-attack-comparison"],
+  },
+);
+
 const getCachedLocations = unstable_cache(async (batch: string[]) => {
   const locationsUrl = new URL(`${API_ROOT}/entities/locations`);
   locationsUrl.search = new URLSearchParams({
@@ -96,10 +119,15 @@ const getCachedLocations = unstable_cache(async (batch: string[]) => {
   revalidate: LOCATION_REVALIDATE_SECONDS,
 });
 
-export async function getRadarSnapshot(range: RadarRange): Promise<AttackSnapshot> {
+export async function getRadarReport(range: RadarRange): Promise<AttackReport> {
   try {
     getToken();
-    const { pairPayload, fetchedAt } = await getCachedPairs(range);
+    const controlRange: RadarControlRange =
+      range === "1d" ? "1dcontrol" : "7dcontrol";
+    const [{ pairPayload, fetchedAt }, comparison] = await Promise.all([
+      getCachedPairs(range),
+      getCachedComparison(controlRange),
+    ]);
     const codes = getRadarLocationCodes(pairPayload).sort();
     const batches: string[][] = [];
     for (let index = 0; index < codes.length; index += LOCATION_BATCH_SIZE) {
@@ -109,12 +137,13 @@ export async function getRadarSnapshot(range: RadarRange): Promise<AttackSnapsho
     // Keep cache scopes separate: nested caches bypass independent reuse in Next.js.
     const locationPayloads = await Promise.all(batches.map(getCachedLocations));
 
-    return normalizeRadarSnapshot(
+    const current = normalizeRadarSnapshot(
       pairPayload,
       locationPayloads,
       range,
       fetchedAt,
     );
+    return { current, comparison };
   } catch (error) {
     if (error instanceof RadarRequestError) throw error;
     if (error instanceof InvalidRadarDataError) {

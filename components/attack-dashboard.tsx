@@ -6,8 +6,9 @@ import { AttackGlobe, type GlobeScene } from "@/components/attack-globe"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { RouteLedger } from "@/components/route-ledger"
 import {
-  isAttackSnapshot,
-  type AttackSnapshot,
+  getAttackRouteKey,
+  isAttackReport,
+  type AttackReport,
   type RadarRange,
 } from "@/lib/attack-data"
 import { getDashboardViewState } from "@/lib/dashboard-view-state"
@@ -25,7 +26,7 @@ const responseError = (body: unknown): string | null => {
   return typeof error.message === "string" ? error.message : null
 }
 
-const makeGlobeScene = (snapshot: AttackSnapshot | undefined): GlobeScene => {
+const makeGlobeScene = (snapshot: AttackReport["current"] | undefined): GlobeScene => {
   const arcs: GlobeScene["arcs"] = []
   const locations: GlobeScene["locations"] = []
   const seenCountries = new Set<GlobeScene["locations"][number]["code"]>()
@@ -74,24 +75,29 @@ const makeGlobeScene = (snapshot: AttackSnapshot | undefined): GlobeScene => {
 
 export function AttackDashboard() {
   const [range, setRange] = useState<RadarRange>("1d")
-  const [snapshots, setSnapshots] = useState<
-    Partial<Record<RadarRange, AttackSnapshot>>
+  const [reports, setReports] = useState<
+    Partial<Record<RadarRange, AttackReport>>
   >({})
   const [errors, setErrors] = useState<Partial<Record<RadarRange, string>>>({})
   const [fetching, setFetching] = useState<
     Partial<Record<RadarRange, boolean>>
   >({})
-  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
+  const [selectedRouteKey, setSelectedRouteKey] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [motionEnabled, setMotionEnabled] = useState(true)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<
     boolean | null
   >(null)
-  const snapshot = snapshots[range]
+  const report = reports[range]
   const error = errors[range]
   const isFetching = fetching[range] ?? false
-  const view = getDashboardViewState({ snapshot, error, isFetching })
-  const scene = useMemo(() => makeGlobeScene(snapshot), [snapshot])
+  const view = getDashboardViewState({ report, error, isFetching })
+  const scene = useMemo(() => makeGlobeScene(report?.current), [report])
+  const selectedRoute = report?.current.routes.find(
+    (route) =>
+      getAttackRouteKey(route.origin.code, route.target.code) ===
+      selectedRouteKey,
+  )
   const effectiveMotionEnabled =
     motionEnabled && prefersReducedMotion === false
 
@@ -147,11 +153,11 @@ export function AttackDashboard() {
           )
         }
 
-        if (!isAttackSnapshot(body)) {
+        if (!isAttackReport(body)) {
           throw new Error("Cloudflare Radar returned an unexpected response.")
         }
-        const nextSnapshot = body
-        setSnapshots((current) => ({ ...current, [range]: nextSnapshot }))
+        const nextReport = body
+        setReports((current) => ({ ...current, [range]: nextReport }))
         setErrors((current) => {
           const next = { ...current }
           delete next[range]
@@ -248,14 +254,14 @@ export function AttackDashboard() {
             <AttackGlobe
               scene={scene}
               motionEnabled={effectiveMotionEnabled}
-              selectedRouteId={selectedRouteId}
+              selectedRouteId={selectedRoute?.id ?? null}
             />
           </div>
 
           <RouteLedger
             view={view}
-            selectedRouteId={selectedRouteId}
-            onSelectRoute={setSelectedRouteId}
+            selectedRouteKey={selectedRouteKey}
+            onSelectRoute={setSelectedRouteKey}
           />
         </section>
       </div>
@@ -263,9 +269,10 @@ export function AttackDashboard() {
       <footer className="dashboard-footer border-t border-atlas-line/70 bg-atlas-water text-xs leading-normal text-atlas-secondary">
         <div className="dashboard-footer-content mx-auto flex w-full max-w-[1120px] flex-col gap-x-8 gap-y-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-3xl text-pretty">
-            Routes show country-level shares of normalized HTTP requests for the
-            selected window. Locations are country-level approximations. Arc
-            direction and motion are illustrative, not individual attacks.
+            Routes show Cloudflare Radar&apos;s normalized reported share for each
+            country pair in the selected window. Locations are country-level
+            approximations. Arc direction and motion are illustrative, not
+            individual attack events.
           </p>
           <p className="shrink-0">
             <a

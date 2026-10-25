@@ -19,15 +19,15 @@ pnpm install
 pnpm dev
 ```
 
-The app opens at `http://localhost:3000`. The API route also accepts `GET /api/attacks?range=1d` or `GET /api/attacks?range=7d`.
+The app opens at `http://localhost:3000`. The API accepts `GET /api/attacks?range=1d` or `GET /api/attacks?range=7d` and returns an `AttackReport` with the current snapshot and an equivalent prior-period comparison.
 
 ## How to read the map
 
-Cloudflare Radar returns up to 40 country pairs for the selected window. Each percentage is the normalized share reported for that pair. The values may not add up to 100 because the endpoint returns only the top pairs. The map does not show raw request counts, bandwidth, attack duration, exact server locations, or individual attack events.
+Cloudflare Radar returns up to 40 country pairs for the selected window. Each percentage is the normalized share reported for that pair. The values may not add up to 100 because the endpoint returns only the top pairs. Each row compares a pair with the same origin and target country codes in the prior period, when present, and shows the difference in percentage points. If the pair is missing from the prior top 40, its prior share is unknown, not zero. The map does not show attack volume, bandwidth, attack duration, exact server locations, or individual attack events.
 
 Origin countries use Cloudflare's client IP geolocation. Target countries use the billing country for the attacked Cloudflare zone. Both are approximate country locations. Radar covers traffic observed by Cloudflare, not every attack on the Internet.
 
-The browser checks for a new snapshot every five minutes while the page is visible. The server assembles snapshots from pair responses cached for five minutes and coordinate lookups cached for one day. These use separate cache scopes so country lookups can be reused across reporting windows. Cloudflare does not document a freshness guarantee for this endpoint, so the dataset update time and app fetch time are separate.
+The 24-hour view compares with Radar's same-weekday control period from one week earlier. The 7-day view compares with the prior 7-day control period. The page shows the actual current and comparison windows, Radar dataset update time, and app-cached provider-fetch time. The browser checks for a new report every five minutes while visible. The server caches current and control pair responses separately for five minutes and coordinate lookups for one day. Refresh checks the app's five-minute cache and does not force a Radar fetch. Cloudflare does not document a freshness guarantee for this endpoint.
 
 Radar data is licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). The dashboard links to Cloudflare Radar as the source. Review the license before using this dashboard commercially.
 

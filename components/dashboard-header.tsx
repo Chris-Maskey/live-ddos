@@ -11,31 +11,12 @@ type DashboardHeaderProps = {
   onRefresh: () => void
 }
 
-const ordinalDay = (day: number) => {
-  const remainder = day % 100
-  const suffix =
-    remainder >= 11 && remainder <= 13
-      ? "th"
-      : day % 10 === 1
-        ? "st"
-        : day % 10 === 2
-          ? "nd"
-          : day % 10 === 3
-            ? "rd"
-            : "th"
-
-  return `${day}${suffix}`
-}
-
-const formatSnapshotTimestamp = (timestamp: string) => {
-  const date = new Date(timestamp)
-  const monthAndYear = new Intl.DateTimeFormat("en-GB", {
-    month: "long",
-    year: "numeric",
-  }).format(date)
-
-  return `${ordinalDay(date.getDate())} ${monthAndYear}, ${date.toLocaleTimeString()}`
-}
+const formatTimestamp = (timestamp: string) =>
+  `${new Intl.DateTimeFormat("en-CA", {
+    dateStyle: "medium",
+    timeStyle: "medium",
+    timeZone: "UTC",
+  }).format(new Date(timestamp))} UTC`
 
 export function DashboardHeader({
   range,
@@ -43,13 +24,11 @@ export function DashboardHeader({
   onRangeChange,
   onRefresh,
 }: DashboardHeaderProps) {
-  const snapshot =
+  const report =
     view.kind === "ready" || view.kind === "empty" || view.kind === "stale"
-      ? view.snapshot
+      ? view.report
       : undefined
-  const updatedAt = snapshot
-    ? formatSnapshotTimestamp(snapshot.lastUpdated)
-    : null
+  const snapshot = report?.current
   const isFetching = view.isFetching
   const statusLabel =
     view.kind === "stale"
@@ -66,7 +45,7 @@ export function DashboardHeader({
             : "Waiting for Radar"
           : isFetching
             ? "Checking for updates"
-            : "Snapshot loaded"
+            : "Report loaded"
   const statusColor =
     view.kind === "stale" && !isFetching
       ? "bg-atlas-warning"
@@ -92,17 +71,6 @@ export function DashboardHeader({
             />
             {statusLabel}
           </p>
-          {snapshot && (
-            <p className="min-w-0 border-l border-atlas-line/70 pl-3">
-              <time
-                dateTime={snapshot.lastUpdated}
-                aria-label={`Snapshot last updated ${updatedAt ?? ""}`}
-                className="inline-block whitespace-nowrap text-right font-mono text-[11px] tabular-nums"
-              >
-                {updatedAt}
-              </time>
-            </p>
-          )}
         </div>
       </div>
 
@@ -137,7 +105,7 @@ export function DashboardHeader({
           <button
             type="button"
             onClick={onRefresh}
-            aria-label="Refresh Radar snapshot"
+            aria-label="Refresh Radar report"
             className="dashboard-control inline-flex min-h-11 items-center justify-center gap-2 px-1 text-xs text-atlas-secondary focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-water focus-visible:outline-none"
           >
             <RefreshCw aria-hidden="true" className="size-3.5" />
@@ -145,6 +113,58 @@ export function DashboardHeader({
           </button>
         </div>
       </div>
+
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] leading-normal text-atlas-secondary">
+        {snapshot && (
+          <p>
+            <span className="font-medium text-atlas-main">Reporting window</span>{" "}
+            <time
+              dateTime={snapshot.window.startTime}
+              className="font-mono tabular-nums"
+            >
+              {formatTimestamp(snapshot.window.startTime)}
+            </time>{" "}
+            to{" "}
+            <time
+              dateTime={snapshot.window.endTime}
+              className="font-mono tabular-nums"
+            >
+              {formatTimestamp(snapshot.window.endTime)}
+            </time>
+          </p>
+        )}
+        {snapshot && (
+          <p>
+            <span className="font-medium text-atlas-main">
+              Radar dataset updated
+            </span>{" "}
+            <time
+              dateTime={snapshot.lastUpdated}
+              className="font-mono tabular-nums"
+            >
+              {formatTimestamp(snapshot.lastUpdated)}
+            </time>
+          </p>
+        )}
+        {snapshot && (
+          <p>
+            <span className="font-medium text-atlas-main">
+              Current pairs fetched by app
+            </span>{" "}
+            <time
+              dateTime={snapshot.fetchedAt}
+              className="font-mono tabular-nums"
+            >
+              {formatTimestamp(snapshot.fetchedAt)}
+            </time>
+          </p>
+        )}
+      </div>
+      <p className="mt-1 text-[11px] leading-normal text-atlas-secondary">
+        Refresh checks the app&apos;s five-minute cache and does not force a Radar
+        fetch. 24h compares the same weekday one week earlier; 7d compares the
+        prior 7-day window.
+      </p>
     </header>
   )
 }

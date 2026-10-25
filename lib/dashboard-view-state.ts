@@ -1,36 +1,36 @@
-import type { AttackSnapshot } from "@/lib/attack-data"
+import type { AttackReport } from "@/lib/attack-data"
 
 export type DashboardViewState =
   | { kind: "loading"; isFetching: boolean }
   | { kind: "unavailable"; error: string; isFetching: boolean }
-  | { kind: "empty"; snapshot: AttackSnapshot; isFetching: boolean }
-  | { kind: "ready"; snapshot: AttackSnapshot; isFetching: boolean }
+  | { kind: "empty"; report: AttackReport; isFetching: boolean }
+  | { kind: "ready"; report: AttackReport; isFetching: boolean }
   | {
       kind: "stale"
-      snapshot: AttackSnapshot
+      report: AttackReport
       error: string
       isFetching: boolean
     }
 
 type DashboardViewInput = {
-  snapshot: AttackSnapshot | undefined
+  report: AttackReport | undefined
   error: string | undefined
   isFetching: boolean
 }
 
 export function getDashboardViewState({
-  snapshot,
+  report,
   error,
   isFetching,
 }: DashboardViewInput): DashboardViewState {
   if (error) {
-    return snapshot
-      ? { kind: "stale", snapshot, error, isFetching }
+    return report
+      ? { kind: "stale", report, error, isFetching }
       : { kind: "unavailable", error, isFetching }
   }
 
-  if (!snapshot) return { kind: "loading", isFetching }
-  if (snapshot.routes.length === 0)
-    return { kind: "empty", snapshot, isFetching }
-  return { kind: "ready", snapshot, isFetching }
+  if (!report) return { kind: "loading", isFetching }
+  if (report.current.routes.length === 0)
+    return { kind: "empty", report, isFetching }
+  return { kind: "ready", report, isFetching }
 }
