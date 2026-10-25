@@ -1,6 +1,6 @@
 # Dashboard UI refresh spec
 
-Status: Updated for route comparison and data timestamps on 2026-10-24.
+Status: Updated for compact report context and steady route rows on 2026-10-25.
 
 Related documents: [product specification](../SPEC.md), [data terminology](../CONTEXT.md), [cache decision](adr/0002-independent-radar-caches.md), and [control-period decision](adr/0003-radar-control-period-comparisons.md).
 
@@ -14,7 +14,7 @@ Primary user: a visitor checking recent HTTP DDoS activity across country pairs 
 
 - Keep the current map hierarchy, route selection, reporting windows, refresh behavior, motion controls, attribution, and globe fallback.
 - Compare current route shares with the equivalent Radar control period. Use percentage-point changes only when both top-40 responses contain the same country-code pair.
-- Show the actual current and comparison windows, Radar dataset update time, and app-cached provider-fetch time. Explain that Refresh checks the app's five-minute cache and does not force a Radar fetch.
+- Show the actual current window and Radar dataset update time in compact form. Keep the app provider-fetch timestamp in report data without surfacing it as a separate UI detail. Use a short ledger label to explain the comparison period; omit the cache explanation.
 - Keep the dark map-focused presentation. Give it a more distinctive cartographic identity.
 - Keep this work on the existing dashboard. Add no navigation or unrelated controls.
 - During a failed refresh, keep the last successful route list visible and show a clear delayed-update notice.
@@ -46,10 +46,10 @@ Desktop layout:
 ```text
 ┌──────────────────────────────────────────────────────────────────────┐
 │ HTTP DDoS routes                [24 hours] [7 days] [Refresh]         │
-│ Window · Radar updated · App fetch                                    │
-│ Refresh checks app cache · Control-period explanation                 │
+│ Report status · Window · Radar updated                                │
 ├────────────────────────────────────────────────┬─────────────────────┤
-│                                                │ Top country pairs   │
+│                                                │ Top routes          │
+│                                                │ Share · change vs…  │
 │                  Interactive globe             │ 01  Origin → Target │
 │                                                │ 12.34% · +0.18 pp   │
 │                                                │ 02  Origin → Target │
@@ -59,14 +59,14 @@ Desktop layout:
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-At narrow widths, place the title and reporting-window controls first, then the globe, then the route ledger. Keep map controls close to the map. Keep the route list scrollable within its ledger on desktop and mobile so selected details do not push the remaining rows out of view. Do not force a desktop-width table or horizontal page scrolling.
+At narrow widths, place the title and reporting-window controls first, then the globe, then the route ledger. Keep map controls close to the map. Keep the route list scrollable within its ledger on desktop and mobile. Do not force a desktop-width table or horizontal page scrolling.
 
 ## Requirements
 
-1. Put the page title, reporting-window control, refresh action, actual current reporting window, Radar dataset update time, and app-cached provider-fetch time in a compact header. Keep the 24-hour and 7-day choices visible as a two-option control. State that Refresh checks the app's five-minute cache and does not force a Radar fetch. Explain that 24h compares the same weekday one week earlier and 7d compares the prior 7-day window.
+1. Put the page title, reporting-window control, refresh action, report status, actual current reporting window, and Radar dataset update time in a compact header. Show timestamps to the minute. Keep the 24-hour and 7-day choices visible as a two-option control. Do not show the app-cached provider-fetch timestamp or cache explanation. Label route changes against the same weekday one week earlier for 24h and the prior 7 days for 7d.
 2. Make the globe the largest visual element. Keep the country-pair ledger beside it on desktop and below it on mobile.
 3. Show each route's rank, origin, target, current normalized reported share, and change in percentage points when the exact pair is present in both periods. Show an unknown previous share when it was not ranked in the previous top 40. Keep unmapped routes in the ledger and mark missing coordinates without inventing a map position.
-4. Selecting a route highlights its matching row and arc in amber. Put its details immediately after its row inside the scrollable ledger. Show the origin as the client IP country and the target as the attacked zone billing country, not a server location. Include both shares and actual windows.
+4. Selecting a route highlights its row and matching arc. Keep the row the same height and do not insert a detail panel. Keep unknown prior shares explicit in the row and its accessible name.
 5. Place the motion control beside the globe. Respect reduced-motion preferences and keep manual globe rotation available.
 6. Use status copy that describes the report accurately. Do not call the feed live. Show checking, loaded, delayed, waiting, and unavailable states with clear text and a restrained status mark.
 7. On a failed refresh, keep the last successful routes and globe visible. Add an inline delayed-update notice with the error message. Clear the notice after a successful refresh.
@@ -79,19 +79,20 @@ At narrow widths, place the title and reporting-window controls first, then the 
 - `GET /api/attacks?range=1d|7d` returns an `AttackReport`: `current` is the existing snapshot and `comparison` contains only Radar's actual control window and up to 40 country-code shares. The browser validates the full envelope.
 - Request `1dcontrol` for `1d` and `7dcontrol` for `7d` in parallel with current data through separate five-minute pair cache entries. Request coordinates for current routes only; keep the one-day location cache independent.
 - Match rows by origin and target country codes. A pair missing from the prior top 40 has unknown share, never zero. Show changes in percentage points.
-- Show the actual current window, Radar dataset update time, and app-cached provider-fetch time. Refresh checks the app's five-minute cache and does not force a Radar fetch.
+- Show the actual current window and Radar dataset update time. Keep app fetch and cache behavior in the report/server contract, not in the visible header.
 - A route is an aggregate country pair over a reporting window. Arc motion is decorative and does not represent individual attacks.
 - Do not add counts, severity scores, live-event claims, graphs, filters, export actions, accounts, or another data provider.
 - Keep the current Next.js, React, Tailwind, and Three.js stack. Do not add dependencies for this refresh.
-- Keep the cartographic design and globe hierarchy. Put selected-route details directly after the selected row within the scrollable ledger.
+- Keep the cartographic design and globe hierarchy. Route selection highlights the row and globe arc without expanding the row.
 
 ## Acceptance criteria
 
 - At a desktop viewport, the globe reads as the main focus and the route ledger remains legible beside it.
 - At a 320 px viewport and at 375 px, controls and content fit without horizontal page scrolling; the globe and route ledger remain usable.
-- The selected range, actual current window, Radar dataset update, app-cached provider fetch, and report status are easy to find and do not imply real-time delivery.
+- The selected range, actual current window, Radar dataset update, and report status are easy to find and do not imply real-time delivery. Timestamps omit seconds.
+- The route ledger identifies the comparison period for each selected range without repeating full comparison dates.
 - Each route shows its current share and a percentage-point change when the exact pair exists in the prior top 40. A missing pair is clearly unknown, not zero.
-- Selecting a route updates its ledger row and mapped arc, and inserts its details after its row in the scrollable ledger. Unmapped routes remain selectable in the ledger.
+- Selecting a route highlights its ledger row and mapped arc without expanding the row. Unmapped routes remain selectable in the ledger.
 - A failed refresh retains the previous list and map, shows an error notice, and returns to the normal state after a successful refresh.
 - Initial loading, empty results, reduced motion, keyboard navigation, and globe failure remain understandable and usable.
 - Aggregate-data copy and Cloudflare attribution remain visible.

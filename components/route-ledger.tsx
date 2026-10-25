@@ -24,16 +24,6 @@ const hasMissingCoordinates = (route: Route) =>
   route.target.latitude === null ||
   route.target.longitude === null
 
-const formatTimestamp = (timestamp: string) =>
-  `${new Intl.DateTimeFormat("en-CA", {
-    dateStyle: "medium",
-    timeStyle: "medium",
-    timeZone: "UTC",
-  }).format(new Date(timestamp))} UTC`
-
-const formatWindow = (window: AttackReport["current"]["window"]) =>
-  `${formatTimestamp(window.startTime)} to ${formatTimestamp(window.endTime)}`
-
 const formatPpChange = (changePp: number) =>
   `${changePp > 0 ? "+" : ""}${changePp.toFixed(2)} pp`
 
@@ -47,21 +37,27 @@ export function RouteLedger({
       ? view.report
       : undefined
   const snapshot = report?.current
+  const comparisonPeriod =
+    snapshot?.range === "1d"
+      ? "same weekday last week"
+      : snapshot?.range === "7d"
+        ? "prior 7 days"
+        : undefined
 
   return (
     <aside
       aria-labelledby="route-ledger-title"
       className="route-ledger flex min-h-0 min-w-0 flex-col"
     >
-      <div className="flex min-h-11 shrink-0 items-center justify-between gap-3 border-b border-atlas-line/70 pb-2">
+      <div className="flex min-h-11 shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-atlas-line/70 pb-2">
         <h2
           id="route-ledger-title"
           className="text-sm font-semibold text-atlas-main"
         >
           Top routes
         </h2>
-        <span className="shrink-0 text-xs text-atlas-secondary">
-          Reported share · change
+        <span className="ml-auto max-w-[75%] min-w-0 text-right text-[10px] leading-tight text-atlas-secondary">
+          {`Reported share · change${comparisonPeriod ? ` vs ${comparisonPeriod}` : ""}`}
         </span>
       </div>
 
@@ -109,7 +105,7 @@ export function RouteLedger({
                 {snapshot.routes.map((route, index) => {
                   const routeKey = getAttackRouteKey(
                     route.origin.code,
-                    route.target.code,
+                    route.target.code
                   )
                   const selected = selectedRouteKey === routeKey
                   const unmapped = hasMissingCoordinates(route)
@@ -158,56 +154,6 @@ export function RouteLedger({
                           </span>
                         </span>
                       </button>
-                      {selected && report && (
-                        <div
-                          role="group"
-                          aria-label={`${routeLabel(route)} details`}
-                          className="border-b border-atlas-line/70 bg-atlas-route-subtle px-3 py-3 text-xs leading-normal text-atlas-secondary"
-                        >
-                          <dl className="grid gap-3 sm:grid-cols-2">
-                            <div>
-                              <dt className="font-semibold text-atlas-main">
-                                Origin · {route.origin.name} ({route.origin.code})
-                              </dt>
-                              <dd>Client IP country</dd>
-                            </div>
-                            <div>
-                              <dt className="font-semibold text-atlas-main">
-                                Target · {route.target.name} ({route.target.code})
-                              </dt>
-                              <dd>
-                                Attacked zone billing country, not server location
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="font-semibold text-atlas-main">
-                                Current reported share
-                              </dt>
-                              <dd className="font-mono tabular-nums">
-                                {route.percent.toFixed(2)}% ·{" "}
-                                {formatWindow(snapshot.window)}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="font-semibold text-atlas-main">
-                                Previous reported share
-                              </dt>
-                              <dd className="font-mono tabular-nums">
-                                {comparison.kind === "ranked"
-                                  ? `${comparison.previousPercent.toFixed(2)}% · `
-                                  : "Unknown · "}
-                                {formatWindow(report.comparison.window)}
-                              </dd>
-                            </div>
-                          </dl>
-                          {comparison.kind === "not-ranked" && (
-                            <p className="mt-3 text-atlas-warning">
-                              Not ranked in the previous top 40. Its previous
-                              share is unknown, not zero.
-                            </p>
-                          )}
-                        </div>
-                      )}
                     </li>
                   )
                 })}

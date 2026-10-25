@@ -14,7 +14,7 @@ type DashboardHeaderProps = {
 const formatTimestamp = (timestamp: string) =>
   `${new Intl.DateTimeFormat("en-CA", {
     dateStyle: "medium",
-    timeStyle: "medium",
+    timeStyle: "short",
     timeZone: "UTC",
   }).format(new Date(timestamp))} UTC`
 
@@ -146,25 +146,7 @@ export function DashboardHeader({
             </time>
           </p>
         )}
-        {snapshot && (
-          <p>
-            <span className="font-medium text-atlas-main">
-              Current pairs fetched by app
-            </span>{" "}
-            <time
-              dateTime={snapshot.fetchedAt}
-              className="font-mono tabular-nums"
-            >
-              {formatTimestamp(snapshot.fetchedAt)}
-            </time>
-          </p>
-        )}
       </div>
-      <p className="mt-1 text-[11px] leading-normal text-atlas-secondary">
-        Refresh checks the app&apos;s five-minute cache and does not force a Radar
-        fetch. 24h compares the same weekday one week earlier; 7d compares the
-        prior 7-day window.
-      </p>
     </header>
   )
 }
