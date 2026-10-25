@@ -1,6 +1,6 @@
 # DDoS Atlas specification
 
-Status: Updated for selected-route comparison on 2026-10-24.
+Status: Updated for compact route and header layout on 2026-10-25.
 
 Scope: Dashboard with equivalent-period route comparison and explicit data timestamps.
 
@@ -29,9 +29,9 @@ It does not establish a new audience, hosting platform, or commercial use case.
   Arc motion is a display effect, not an individual attack event.
 - Origin countries describe client IP geolocation. Target countries describe
   the attacked zone's billing country. Coordinates are approximate.
-- Show the actual current reporting window, Radar dataset update time, and
-  cached app provider-fetch time separately. Do not claim an upstream
-  freshness guarantee.
+- Show the actual current reporting window and Radar dataset update time in
+  the header. Keep the app provider-fetch timestamp in the report data without
+  giving it a separate UI label. Do not claim an upstream freshness guarantee.
 - Attribute Cloudflare Radar and link to its CC BY-NC 4.0 data license, as
   recorded in the existing [research](docs/research/cloudflare-radar.md).
 
@@ -47,13 +47,12 @@ and additional providers.
 3. The ranked list shows each route's origin, target, normalized reported
    share, and percentage-point change when its exact prior pair is available.
    Routes without coordinates remain in the list and have no globe arc.
-4. Selecting a list entry highlights the corresponding arc when mapped and
-   shows its details immediately after the row inside the scrollable ledger.
-   Details name the country meanings and show current and prior shares with
-   both actual windows. A pair missing from the prior top 40 has unknown share.
-5. The header shows the actual current window, Radar dataset update time, and
-   app-cached provider-fetch time. It says Refresh checks the app's five-minute
-   cache and does not force a Radar fetch.
+4. Selecting a list entry highlights its row and corresponding arc when
+   mapped. Selection does not expand the row. A pair missing from the prior
+   top 40 shows an unknown change, never zero.
+5. The header shows the actual current window and Radar dataset update time to
+   the minute. The app provider-fetch time stays in report data, not the UI.
+   The header does not explain the app cache.
 6. The browser checks every five minutes while visible. Returning to the page
    requests an update. Failed requests increase the retry delay to a maximum
    of 30 minutes. Range changes and unmounting cancel pending requests.
@@ -186,9 +185,11 @@ and the repository's Prettier configuration for formatting touched code.
   Invalid rows and coordinates follow the rules above.
 - Deltas match exact country-code pairs and are expressed in percentage points.
   Missing prior top-40 pairs retain unknown share rather than zero.
-- The header distinguishes the actual current window, Radar dataset update,
-  and app-cached provider-fetch timestamps. Refresh wording describes the
-  five-minute app cache accurately.
+- The header shows report status, the actual current window, and Radar dataset
+  update time to the minute. It omits the app provider-fetch timestamp and
+  cache explanation.
+- The route ledger names the comparison period. Selecting a route highlights
+  its row and mapped arc without expanding the row.
 - The list and globe use the same selected snapshot. Selecting a mapped route
   highlights its arc. Missing coordinates do not remove a valid list entry.
 - Polling respects page visibility and retry limits. Failed updates preserve
