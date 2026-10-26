@@ -6,6 +6,7 @@ import {
   type AttackReport,
 } from "@/lib/attack-data"
 import type { DashboardViewState } from "@/lib/dashboard-view-state"
+import LoadingState from "@/components/loading-state"
 
 type Route = AttackReport["current"]["routes"][number]
 
@@ -87,9 +88,12 @@ export function RouteLedger({
       )}
 
       {view.kind === "loading" && (
-        <p className="mt-4 shrink-0 text-sm leading-normal text-atlas-secondary">
-          {view.isFetching ? "Checking Radar…" : "Waiting for Radar…"}
-        </p>
+        <div className="flex min-h-0 flex-1 items-center justify-center">
+          <LoadingState
+            label={view.isFetching ? "Checking Radar…" : "Waiting for Radar…"}
+            announce={false}
+          />
+        </div>
       )}
 
       {snapshot && (
