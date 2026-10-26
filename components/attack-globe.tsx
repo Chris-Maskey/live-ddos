@@ -17,9 +17,11 @@ export type GlobeArc = {
   routeId: string
   order: number
   startName: string
+  startCode: AttackRoute["origin"]["code"]
   startLat: number
   startLng: number
   endName: string
+  endCode: AttackRoute["target"]["code"]
   endLat: number
   endLng: number
   arcAlt: number
@@ -49,17 +51,44 @@ const globeConfig: GlobeConfig = {
 }
 
 const getFocusRotationOffset = (arc: GlobeArc | undefined) => {
-  if (!arc) return 0
+  if (!arc) return { latitude: 0, longitude: 0 }
 
-  const startLongitude = (arc.startLng * Math.PI) / 180
-  const endLongitude = (arc.endLng * Math.PI) / 180
-  const midpointLongitude = Math.atan2(
-    Math.sin(startLongitude) + Math.sin(endLongitude),
-    Math.cos(startLongitude) + Math.cos(endLongitude)
+  const toVector = (latitude: number, longitude: number) => {
+    const latitudeRadians = (latitude * Math.PI) / 180
+    const longitudeRadians = (longitude * Math.PI) / 180
+    const radius = Math.cos(latitudeRadians)
+    return {
+      x: radius * Math.cos(longitudeRadians),
+      y: Math.sin(latitudeRadians),
+      z: radius * Math.sin(longitudeRadians),
+    }
+  }
+  const start = toVector(arc.startLat, arc.startLng)
+  const end = toVector(arc.endLat, arc.endLng)
+  const midpoint = {
+    x: start.x + end.x,
+    y: start.y + end.y,
+    z: start.z + end.z,
+  }
+  const midpointLength = Math.hypot(midpoint.x, midpoint.y, midpoint.z)
+  const midpointLatitude = Math.atan2(
+    midpoint.y,
+    Math.hypot(midpoint.x, midpoint.z)
   )
+  const midpointLongitude = Math.atan2(midpoint.z, midpoint.x)
+  const initialLatitude =
+    ((globeConfig.initialPosition?.lat ?? 0) * Math.PI) / 180
   const initialLongitude =
     ((globeConfig.initialPosition?.lng ?? 0) * Math.PI) / 180
-  return -midpointLongitude - initialLongitude
+
+  if (midpointLength < 1e-6) {
+    return { latitude: 0, longitude: 0 }
+  }
+
+  return {
+    latitude: midpointLatitude - initialLatitude,
+    longitude: -midpointLongitude - initialLongitude,
+  }
 }
 
 const World = dynamic(
@@ -122,7 +151,7 @@ export function AttackGlobe({
   const userRotationOffset =
     userRotation.routeId === selectedRouteId ? userRotation.offset : 0
   const focusRotationOffset = getFocusRotationOffset(selectedArc)
-  const rotationOffset = focusRotationOffset + userRotationOffset
+  const rotationOffset = focusRotationOffset.longitude + userRotationOffset
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return
@@ -180,6 +209,7 @@ export function AttackGlobe({
             scene={scene}
             motionEnabled={motionEnabled}
             selectedRouteId={selectedRouteId}
+            rotationLatitudeOffset={focusRotationOffset.latitude}
             rotationOffset={rotationOffset}
           />
         ) : (

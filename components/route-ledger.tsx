@@ -87,15 +87,15 @@ export function RouteLedger({
               Top routes
             </h2>
             {snapshot && (
-              <span className="text-[11px] leading-tight text-atlas-secondary tabular-nums">
-                {snapshot.routes.length} pairs
+              <span className="text-xs leading-tight text-atlas-secondary tabular-nums">
+                {snapshot.routes.length} routes
                 <span className="route-ledger-scroll-cue">
-                  {" · scroll this list to view all"}
+                  {" · scroll to browse all"}
                 </span>
               </span>
             )}
           </div>
-          <p className="mt-1 text-caption leading-snug text-atlas-secondary">
+          <p className="mt-1 text-xs leading-snug text-atlas-secondary">
             {`Change in percentage points${comparisonPeriod ? ` vs ${comparisonPeriod}` : ""}`}
           </p>
         </div>
@@ -193,7 +193,7 @@ export function RouteLedger({
                     const comparisonLabel =
                       comparison.kind === "ranked"
                         ? formatPpChange(comparison.changePp)
-                        : "Not in prior top 40"
+                        : "Unranked"
                     const accessibleComparison =
                       comparison.kind === "ranked"
                         ? `change ${formatPpChange(comparison.changePp)} from the previous reporting window`
@@ -230,7 +230,7 @@ export function RouteLedger({
                             <span
                               title={
                                 comparison.kind === "not-ranked"
-                                  ? "This pair was outside Radar's prior top 40, so its previous share is unknown."
+                                  ? "Outside Radar's prior top 40. Its previous share is unknown."
                                   : undefined
                               }
                               className={

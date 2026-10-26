@@ -9,6 +9,7 @@ import { IconSwap } from "@/components/ui/icon-swap"
 import {
   getAttackRouteKey,
   isAttackReport,
+  type AttackRoute,
   type AttackReport,
   type RadarRange,
 } from "@/lib/attack-data"
@@ -62,9 +63,11 @@ const makeGlobeScene = (
       routeId: route.id,
       order,
       startName: route.origin.name,
+      startCode: route.origin.code,
       startLat,
       startLng,
       endName: route.target.name,
+      endCode: route.target.code,
       endLat,
       endLng,
       arcAlt: Math.min(0.52, 0.12 + weight * 0.035),
@@ -95,11 +98,25 @@ export function AttackDashboard() {
   const isFetching = fetching[range] ?? false
   const view = getDashboardViewState({ report, error, isFetching })
   const scene = useMemo(() => makeGlobeScene(report?.current), [report])
-  const selectedRoute = report?.current.routes.find(
+  const firstMappedCrossBorderRoute = report?.current.routes.find(
     (route) =>
-      getAttackRouteKey(route.origin.code, route.target.code) ===
-      selectedRouteKey
+      route.origin.code !== route.target.code &&
+      route.origin.latitude !== null &&
+      route.origin.longitude !== null &&
+      route.target.latitude !== null &&
+      route.target.longitude !== null
   )
+  const selectedRoute =
+    report?.current.routes.find(
+      (route) =>
+        getAttackRouteKey(route.origin.code, route.target.code) ===
+        selectedRouteKey
+    ) ??
+    firstMappedCrossBorderRoute ??
+    report?.current.routes[0]
+  const activeSelectedRouteKey = selectedRoute
+    ? getAttackRouteKey(selectedRoute.origin.code, selectedRoute.target.code)
+    : null
   const hasSelectedRoutePath = scene.arcs.some(
     (arc) => arc.routeId === selectedRoute?.id
   )
@@ -259,7 +276,7 @@ export function AttackDashboard() {
         >
           <RouteLedger
             view={view}
-            selectedRouteKey={selectedRouteKey}
+            selectedRouteKey={activeSelectedRouteKey}
             onSelectRoute={setSelectedRouteKey}
           />
 
@@ -271,13 +288,21 @@ export function AttackDashboard() {
               <div>
                 <h2 className="text-sm font-semibold text-white">Route map</h2>
                 <p className="mt-1 text-xs leading-tight text-[color:var(--atlas-map-muted)]">
-                  Select a row to highlight its path · focus the map and use ← /
-                  →, or drag to rotate
+                  <span className="text-[color:var(--atlas-map-route)]">
+                    Routes are cyan
+                  </span>
+                  ;{" "}
+                  <span className="text-[color:var(--atlas-map-selected-route)]">
+                    selection is amber
+                  </span>
+                  . Drag or use ← / → to rotate.
                 </p>
                 {selectedRoute && (
                   <p className="mt-1 text-xs leading-tight text-[color:var(--atlas-map-selected-route)]">
                     {hasSelectedRoutePath ? "Highlighted" : "Selected"}:{" "}
-                    {selectedRoute.origin.name} → {selectedRoute.target.name}
+                    {selectedRoute.origin.code === selectedRoute.target.code
+                      ? `${selectedRoute.origin.name} · same-country route`
+                      : `${selectedRoute.origin.name} → ${selectedRoute.target.name}`}
                   </p>
                 )}
               </div>

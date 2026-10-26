@@ -72,7 +72,7 @@ export function DashboardHeader({
           <p
             role="status"
             aria-live="polite"
-            className="inline-flex min-h-5 items-center gap-2 text-[11px] tabular-nums"
+            className="inline-flex min-h-5 items-center gap-2 text-xs tabular-nums"
           >
             <span
               aria-hidden="true"
@@ -92,12 +92,12 @@ export function DashboardHeader({
             Share of all reported Layer 7 DDoS requests by country pair.
           </p>
           {snapshot ? (
-            <p className="mt-1 font-mono text-[11px] leading-normal text-atlas-secondary">
+            <p className="mt-1 font-mono text-xs leading-normal text-atlas-secondary">
               <span className="font-sans">Window · </span>
               {formatWindow(snapshot.window.startTime, snapshot.window.endTime)}
             </p>
           ) : view.kind === "loading" ? (
-            <p className="mt-1 font-mono text-[11px] leading-normal text-atlas-secondary">
+            <p className="mt-1 font-mono text-xs leading-normal text-atlas-secondary">
               <span className="font-sans">Window · </span>
               {range === "1d" ? "Last 24 hours" : "Last 7 days"} · Loading
             </p>

@@ -28,7 +28,7 @@
   --color-lavender: #7c3aed;
   --color-conic-spectrum: #8b5cf6;
   --color-primary-action-fill: #000000;
-  --text-caption: 11px;
+  --text-caption: 12px;
   --leading-caption: 1.5;
   --text-body: 14px;
   --leading-body: 1.43;
@@ -354,7 +354,7 @@
   background-color: var(--surface-card);
   padding: 0.55rem 0.5rem 0.55rem 0.75rem;
   color: var(--atlas-secondary);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 600;
   line-height: 1rem;
   letter-spacing: 0.02em;
@@ -467,6 +467,13 @@
 
   .route-ledger-rows .route-ledger-column-head {
     display: none;
+  }
+
+  .route-ledger-rows[data-expanded="false"] .route-ledger-column-head {
+    display: grid;
+    position: static;
+    z-index: auto;
+    background: transparent;
   }
 
   .route-ledger-scroll-cue {

@@ -58,6 +58,7 @@ type WorldProps = {
   scene: GlobeScene
   motionEnabled: boolean
   selectedRouteId: string | null
+  rotationLatitudeOffset: number
   rotationOffset: number
 }
 
@@ -79,6 +80,7 @@ export function Globe({
   scene,
   motionEnabled,
   selectedRouteId,
+  rotationLatitudeOffset,
   rotationOffset,
 }: WorldProps) {
   const globeRef = useRef<ThreeGlobe | null>(null)
@@ -137,6 +139,36 @@ export function Globe({
     const selectedArc = scene.arcs.find(
       (arc) => arc.routeId === selectedRouteId
     )
+    const selectedCountryCodes = new Set(
+      selectedArc ? [selectedArc.startCode, selectedArc.endCode] : []
+    )
+    const isSameCountryRoute =
+      selectedArc !== undefined && selectedArc.startCode === selectedArc.endCode
+    const points = scene.locations.map((location) => {
+      const selected = selectedCountryCodes.has(location.code)
+      return {
+        ...location,
+        color: selected ? palette.selectedRoute : palette.route,
+        radius: selected ? (isSameCountryRoute ? 1.05 : 0.8) : 0.6,
+        altitude: selected ? 0.025 : 0.015,
+      }
+    })
+    const rings = motionEnabled
+      ? scene.locations.map((location) => {
+          const selected = selectedCountryCodes.has(location.code)
+          return {
+            ...location,
+            color: selected
+              ? [palette.selectedRoute, palette.background]
+              : [palette.route, palette.background],
+            altitude: selected ? 0.03 : 0.018,
+            maxRadius:
+              selected && isSameCountryRoute
+                ? RING_MAX_RADIUS * 2
+                : RING_MAX_RADIUS,
+          }
+        })
+      : []
     const selectedLabels = selectedArc
       ? [
           {
@@ -161,8 +193,8 @@ export function Globe({
           : selectedRouteId
             ? palette.mutedRoute
             : palette.route,
-        arcAlt: selected ? 0.08 : arc.arcAlt,
-        stroke: selected ? Math.max(arc.stroke, 0.55) : arc.stroke,
+        arcAlt: selected ? Math.max(arc.arcAlt, 0.28) : arc.arcAlt,
+        stroke: selected ? Math.max(arc.stroke, 1.2) : arc.stroke,
         dashLength: selected ? 1 : motionEnabled ? config.arcLength : 1,
         dashGap: selected ? 0 : motionEnabled ? 1 : 0,
         dashInitialGap: selected ? 0 : index,
@@ -184,29 +216,30 @@ export function Globe({
       .arcDashGap("dashGap")
       .arcDashAnimateTime("dashTime")
       .arcsTransitionDuration(motionEnabled ? 450 : 0)
-      .pointsData(scene.locations)
+      .pointsData(points)
       .pointLat("lat")
       .pointLng("lng")
-      .pointColor(() => palette.route)
+      .pointColor("color")
       .pointsMerge(true)
-      .pointAltitude(0.015)
-      .pointRadius(0.6)
+      .pointAltitude("altitude")
+      .pointRadius("radius")
       .labelsData(selectedLabels)
       .labelLat("lat")
       .labelLng("lng")
       .labelText("text")
-      .labelSize(3)
+      .labelSize(1.7)
       .labelColor(() => palette.selectedRoute)
       .labelAltitude(0.035)
       .labelIncludeDot(true)
       .labelDotRadius(0.16)
       .labelDotOrientation(() => "bottom")
       .labelsTransitionDuration(motionEnabled ? 300 : 0)
-      .ringsData(motionEnabled ? scene.locations : [])
+      .ringsData(rings)
       .ringLat("lat")
       .ringLng("lng")
-      .ringColor(() => [palette.route + "55", palette.route + "00"])
-      .ringMaxRadius(RING_MAX_RADIUS)
+      .ringAltitude("altitude")
+      .ringColor("color")
+      .ringMaxRadius("maxRadius")
       .ringPropagationSpeed(RING_PROPAGATION_SPEED)
       .ringRepeatPeriod(RING_REPEAT_PERIOD)
   }, [
@@ -214,6 +247,7 @@ export function Globe({
     config.arcTime,
     isInitialized,
     motionEnabled,
+    palette.background,
     palette.route,
     palette.mutedRoute,
     palette.selectedRoute,
@@ -228,7 +262,7 @@ export function Globe({
     <group
       ref={groupRef}
       rotation={[
-        (initialPosition.lat * Math.PI) / 180,
+        (initialPosition.lat * Math.PI) / 180 + rotationLatitudeOffset,
         (initialPosition.lng * Math.PI) / 180 + rotationOffset,
         0,
       ]}
@@ -242,6 +276,7 @@ function WorldContents({
   scene,
   motionEnabled,
   selectedRouteId,
+  rotationLatitudeOffset,
   rotationOffset,
 }: WorldProps) {
   const { size } = useThree()
@@ -275,6 +310,7 @@ function WorldContents({
           scene={scene}
           motionEnabled={motionEnabled}
           selectedRouteId={selectedRouteId}
+          rotationLatitudeOffset={rotationLatitudeOffset}
           rotationOffset={rotationOffset}
         />
       </group>
