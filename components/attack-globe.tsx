@@ -4,6 +4,7 @@ import { Component, type ReactNode, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import type { AttackRoute } from "@/lib/attack-data";
+import LoadingState from "@/components/loading-state";
 import {
   type GlobeConfig,
   type GlobePalette,
@@ -46,8 +47,12 @@ const World = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div role="status" className="grid h-full place-items-center text-sm text-atlas-secondary">
-        Preparing globe…
+      <div className="grid h-full place-items-center">
+        <LoadingState
+          variant="Orbit"
+          label="Preparing globe…"
+          showElapsed={false}
+        />
       </div>
     ),
   },
@@ -123,8 +128,12 @@ export function AttackGlobe({
             selectedRouteId={selectedRouteId}
           />
         ) : (
-          <div role="status" className="grid h-full place-items-center text-sm text-atlas-secondary">
-            Preparing globe…
+          <div className="grid h-full place-items-center">
+            <LoadingState
+              variant="Orbit"
+              label="Preparing globe…"
+              showElapsed={false}
+            />
           </div>
         )}
       </GlobeErrorBoundary>

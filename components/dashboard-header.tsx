@@ -1,6 +1,6 @@
 "use client"
 
-import { RefreshCw } from "lucide-react"
+import { StatusButton } from "@/components/ui/status-button"
 import type { RadarRange } from "@/lib/attack-data"
 import type { DashboardViewState } from "@/lib/dashboard-view-state"
 
@@ -8,7 +8,7 @@ type DashboardHeaderProps = {
   range: RadarRange
   view: DashboardViewState
   onRangeChange: (range: RadarRange) => void
-  onRefresh: () => void
+  onRefresh: () => Promise<void>
 }
 
 const formatTimestamp = (timestamp: string) =>
@@ -102,15 +102,11 @@ export function DashboardHeader({
               </button>
             </div>
           </fieldset>
-          <button
-            type="button"
+          <StatusButton
             onClick={onRefresh}
-            aria-label="Refresh Radar report"
+            ariaLabel="Refresh Radar report"
             className="dashboard-control inline-flex min-h-11 items-center justify-center gap-2 px-1 text-xs text-atlas-secondary focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-water focus-visible:outline-none"
-          >
-            <RefreshCw aria-hidden="true" className="size-3.5" />
-            Refresh
-          </button>
+          />
         </div>
       </div>
     </header>

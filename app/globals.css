@@ -114,15 +114,15 @@
   --radius-4xl: var(--radius-largecards);
   --radius-full: 9999px;
   --shadow-subtle: rgba(0, 0, 0, 0.05) 0px 1px 2px 0px;
-  --shadow-sm: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px,
-    rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
+  --shadow-sm:
+    rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
   --shadow-sm-2: rgba(0, 0, 0, 0.2) 0px 2px 6px 0px inset;
   --shadow-subtle-2: rgba(0, 0, 0, 0.1) 0px 0px 0px 4px;
-  --shadow-md: rgba(0, 0, 0, 0.1) 0px 10px 15px -3px,
-    rgba(0, 0, 0, 0.1) 0px 4px 6px -4px;
+  --shadow-md:
+    rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.1) 0px 4px 6px -4px;
   --shadow-lg: rgba(0, 0, 0, 0.09) 0px 20px 20px 0px;
-  --shadow-subtle-3: rgb(255, 255, 255) 0px 0px 0px 3px,
-    rgb(0, 0, 0) 0px 0px 0px 4px;
+  --shadow-subtle-3:
+    rgb(255, 255, 255) 0px 0px 0px 3px, rgb(0, 0, 0) 0px 0px 0px 4px;
 }
 
 :root {
@@ -180,7 +180,7 @@
   --section-gap: 64px;
   --card-padding: 16px;
   --element-gap: 8px;
-  --radius-tags: 9999px;
+  --radius-tags: 6px;
   --radius-cards: 12px;
   --radius-inputs: 6px;
   --radius-buttons: 8px;
@@ -327,8 +327,7 @@
   }
 }
 
-@media (min-width: 64rem),
-  (min-width: 52rem) and (orientation: landscape) {
+@media (min-width: 64rem), (min-width: 52rem) and (orientation: landscape) {
   .route-index-layout {
     grid-template-columns: minmax(0, 1.38fr) minmax(18rem, 1fr);
     grid-template-rows: minmax(0, 1fr);
@@ -387,6 +386,63 @@
   }
 }
 
+.loading-pixel {
+  animation: loading-pixel-on var(--loading-duration) ease-in-out
+    var(--loading-delay) infinite;
+  opacity: 0.15;
+}
+
+.loading-pixel-static {
+  animation: none;
+  opacity: 0.07;
+}
+
+.loading-label {
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    var(--atlas-secondary) 35%,
+    var(--atlas-main) 50%,
+    var(--atlas-secondary) 65%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: loading-label-shimmer 1.4s linear infinite;
+}
+
+.loading-video-card {
+  animation: loading-pop-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top left;
+}
+
+@keyframes loading-pixel-on {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes loading-label-shimmer {
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes loading-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .route-index-enter {
   animation: route-index-enter 360ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
@@ -414,12 +470,28 @@
   .route-index-row:active {
     transform: scale(0.995);
   }
-
 }
 
 @media (prefers-reduced-motion: reduce) {
   .route-index-enter {
     animation: none;
+  }
+
+  .loading-pixel,
+  .loading-pixel-static,
+  .loading-label,
+  .loading-video-card {
+    animation: none;
+  }
+
+  .loading-pixel,
+  .loading-pixel-static {
+    opacity: 0.07;
+  }
+
+  .loading-label {
+    background: none;
+    color: var(--atlas-secondary);
   }
 }
 
