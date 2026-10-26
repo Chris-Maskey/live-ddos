@@ -56,7 +56,7 @@ export function RouteLedger({
         >
           Top routes
         </h2>
-        <span className="ml-auto max-w-[75%] min-w-0 text-right text-[10px] leading-tight text-atlas-secondary">
+        <span className="ml-auto max-w-[75%] min-w-0 text-right text-caption leading-tight text-atlas-secondary">
           {`Reported share · change${comparisonPeriod ? ` vs ${comparisonPeriod}` : ""}`}
         </span>
       </div>
@@ -128,7 +128,7 @@ export function RouteLedger({
                         onClick={() => onSelectRoute(routeKey)}
                         aria-pressed={selected}
                         aria-label={`${routeLabel(route)}, ${route.percent.toFixed(2)} percent normalized reported share, ${accessibleComparison}${unmapped ? ", coordinates unavailable" : ""}`}
-                        className={`route-index-row grid min-h-11 w-full grid-cols-[1.5rem_minmax(0,1fr)_5rem] items-center gap-2 border-b border-atlas-line/70 py-2.5 pr-2 pl-3 text-left text-atlas-main focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:outline-none focus-visible:ring-inset ${selected ? "bg-atlas-route-subtle" : ""}`}
+                        className={`route-index-row grid min-h-11 w-full grid-cols-[1.5rem_minmax(0,1fr)_6rem] items-center gap-2 border-b border-atlas-line/70 py-2.5 pr-2 pl-3 text-left text-atlas-main focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:outline-none focus-visible:ring-inset ${selected ? "bg-atlas-route-subtle" : ""}`}
                       >
                         <span
                           className={`font-mono text-xs tabular-nums ${selected ? "text-atlas-main" : "text-atlas-secondary"}`}
@@ -145,11 +145,11 @@ export function RouteLedger({
                             </span>
                           )}
                         </span>
-                        <span className="w-20 text-right font-mono text-xs tabular-nums">
-                          <span className="block text-atlas-route">
+                        <span className="w-24 text-right font-mono text-xs tabular-nums">
+                          <span className="block whitespace-nowrap text-atlas-route">
                             {route.percent.toFixed(2)}%
                           </span>
-                          <span className="block text-[10px] text-atlas-secondary">
+                          <span className="block whitespace-nowrap text-caption text-atlas-secondary">
                             {comparisonLabel}
                           </span>
                         </span>
