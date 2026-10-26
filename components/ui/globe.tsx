@@ -193,11 +193,9 @@ export function Globe({
           : selectedRouteId
             ? palette.mutedRoute
             : palette.route,
-        arcAlt: selected ? Math.max(arc.arcAlt, 0.28) : arc.arcAlt,
-        stroke: selected ? Math.max(arc.stroke, 1.2) : arc.stroke,
-        dashLength: selected ? 1 : motionEnabled ? config.arcLength : 1,
-        dashGap: selected ? 0 : motionEnabled ? 1 : 0,
-        dashInitialGap: selected ? 0 : index,
+        dashLength: selected || !motionEnabled ? 1 : config.arcLength,
+        dashGap: selected || !motionEnabled ? 0 : 1 - config.arcLength,
+        dashInitialGap: 0,
         dashTime: selected ? 0 : motionEnabled ? config.arcTime : 0,
       }
     })

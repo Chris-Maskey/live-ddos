@@ -96,7 +96,7 @@ const World = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="grid h-full place-items-center">
+      <div className="route-map-loading grid h-full place-items-center">
         <LoadingState
           variant="Orbit"
           label="Preparing globe…"
@@ -213,7 +213,7 @@ export function AttackGlobe({
             rotationOffset={rotationOffset}
           />
         ) : (
-          <div className="grid h-full place-items-center">
+          <div className="route-map-loading grid h-full place-items-center">
             <LoadingState
               variant="Orbit"
               label="Preparing globe…"

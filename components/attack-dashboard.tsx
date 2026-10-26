@@ -9,7 +9,6 @@ import { IconSwap } from "@/components/ui/icon-swap"
 import {
   getAttackRouteKey,
   isAttackReport,
-  type AttackRoute,
   type AttackReport,
   type RadarRange,
 } from "@/lib/attack-data"
@@ -18,6 +17,10 @@ import { getDashboardViewState } from "@/lib/dashboard-view-state"
 const POLL_INTERVAL_MS = 5 * 60 * 1000
 const MAX_RETRY_DELAY_MS = 30 * 60 * 1000
 type PollOutcome = "success" | "failure" | "cancelled"
+type RouteSelection =
+  | { kind: "default" }
+  | { kind: "route"; key: string }
+  | { kind: "none" }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -87,7 +90,9 @@ export function AttackDashboard() {
   const [fetching, setFetching] = useState<
     Partial<Record<RadarRange, boolean>>
   >({})
-  const [selectedRouteKey, setSelectedRouteKey] = useState<string | null>(null)
+  const [routeSelection, setRouteSelection] = useState<RouteSelection>({
+    kind: "default",
+  })
   const [motionEnabled, setMotionEnabled] = useState(true)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<
     boolean | null
@@ -106,20 +111,20 @@ export function AttackDashboard() {
       route.target.latitude !== null &&
       route.target.longitude !== null
   )
+  const defaultRoute = firstMappedCrossBorderRoute ?? report?.current.routes[0]
   const selectedRoute =
-    report?.current.routes.find(
-      (route) =>
-        getAttackRouteKey(route.origin.code, route.target.code) ===
-        selectedRouteKey
-    ) ??
-    firstMappedCrossBorderRoute ??
-    report?.current.routes[0]
+    routeSelection.kind === "none"
+      ? undefined
+      : routeSelection.kind === "route"
+        ? (report?.current.routes.find(
+            (route) =>
+              getAttackRouteKey(route.origin.code, route.target.code) ===
+              routeSelection.key
+          ) ?? defaultRoute)
+        : defaultRoute
   const activeSelectedRouteKey = selectedRoute
     ? getAttackRouteKey(selectedRoute.origin.code, selectedRoute.target.code)
     : null
-  const hasSelectedRoutePath = scene.arcs.some(
-    (arc) => arc.routeId === selectedRoute?.id
-  )
   const effectiveMotionEnabled = motionEnabled && prefersReducedMotion === false
 
   useEffect(() => {
@@ -277,33 +282,27 @@ export function AttackDashboard() {
           <RouteLedger
             view={view}
             selectedRouteKey={activeSelectedRouteKey}
-            onSelectRoute={setSelectedRouteKey}
+            onSelectRoute={(key) => setRouteSelection({ kind: "route", key })}
           />
 
           <div
             id="route-map"
             className="route-index-globe mx-auto w-full max-w-[760px] min-w-0"
           >
-            <div className="flex min-h-12 flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <div>
+            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+              <div className="min-w-0">
                 <h2 className="text-sm font-semibold text-white">Route map</h2>
                 <p className="mt-1 text-xs leading-tight text-[color:var(--atlas-map-muted)]">
-                  <span className="text-[color:var(--atlas-map-route)]">
-                    Routes are cyan
-                  </span>
-                  ;{" "}
-                  <span className="text-[color:var(--atlas-map-selected-route)]">
-                    selection is amber
-                  </span>
-                  . Drag or use ← / → to rotate.
+                  Drag or use ← / → to rotate.
                 </p>
                 {selectedRoute && (
-                  <p className="mt-1 text-xs leading-tight text-[color:var(--atlas-map-selected-route)]">
-                    {hasSelectedRoutePath ? "Highlighted" : "Selected"}:{" "}
-                    {selectedRoute.origin.code === selectedRoute.target.code
-                      ? `${selectedRoute.origin.name} · same-country route`
-                      : `${selectedRoute.origin.name} → ${selectedRoute.target.name}`}
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setRouteSelection({ kind: "none" })}
+                    className="mt-1 inline-flex min-h-8 items-center rounded text-xs font-medium text-[color:var(--atlas-map-route)] underline underline-offset-2 hover:text-white focus-visible:ring-2 focus-visible:ring-atlas-map-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-map-water focus-visible:outline-none"
+                  >
+                    Clear selection
+                  </button>
                 )}
               </div>
               <button
@@ -311,16 +310,16 @@ export function AttackDashboard() {
                 onClick={() => setMotionEnabled((enabled) => !enabled)}
                 disabled={prefersReducedMotion !== false}
                 aria-pressed={effectiveMotionEnabled}
-                className="dashboard-control inline-flex min-h-[52px] min-w-[48px] items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-3 text-xs font-medium text-[color:var(--atlas-map-muted)] focus-visible:ring-2 focus-visible:ring-atlas-map-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-map-water focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-75"
+                className="dashboard-control inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-3 text-xs font-medium text-[color:var(--atlas-map-muted)] focus-visible:ring-2 focus-visible:ring-atlas-map-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-map-water focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-75"
               >
                 <IconSwap
                   state={effectiveMotionEnabled ? "pause" : "play"}
-                  className="inline-flex size-16 shrink-0 items-center justify-center"
+                  className="inline-flex size-4 shrink-0 items-center justify-center"
                 >
                   {effectiveMotionEnabled ? (
-                    <Pause aria-hidden="true" className="size-16 shrink-0" />
+                    <Pause aria-hidden="true" className="size-4 shrink-0" />
                   ) : (
-                    <Play aria-hidden="true" className="size-16 shrink-0" />
+                    <Play aria-hidden="true" className="size-4 shrink-0" />
                   )}
                 </IconSwap>
                 {prefersReducedMotion === null

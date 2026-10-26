@@ -587,6 +587,23 @@
   animation: loading-label-shimmer 1.4s linear infinite;
 }
 
+.route-map-loading .loading-pixel {
+  background-color: var(--atlas-map-route);
+}
+
+.route-map-loading .loading-pixel-static {
+  opacity: 0.45;
+}
+
+.route-map-loading .loading-label {
+  background-image: linear-gradient(
+    90deg,
+    var(--atlas-map-muted) 35%,
+    var(--atlas-map-route) 50%,
+    var(--atlas-map-muted) 65%
+  );
+}
+
 .loading-video-card {
   animation: loading-pop-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
   transform-origin: top left;
@@ -669,6 +686,10 @@
     background: none;
     color: var(--atlas-secondary);
   }
+
+  .route-map-loading .loading-label {
+    color: var(--atlas-map-muted);
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -679,6 +700,12 @@
   .dashboard-control:hover,
   .dashboard-link:hover {
     color: var(--atlas-main);
+  }
+
+  .route-index-globe .dashboard-control:hover {
+    border-color: rgb(255 255 255 / 40%);
+    background-color: rgb(255 255 255 / 12%);
+    color: #fff;
   }
 }
 

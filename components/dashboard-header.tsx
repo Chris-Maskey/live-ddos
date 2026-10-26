@@ -29,7 +29,7 @@ const formatWindow = (startTime: string, endTime: string) => {
     timeZone: "UTC",
   })
 
-  return `${formatter.format(new Date(startTime))}–${formatter.format(new Date(endTime))} UTC`
+  return `${formatter.format(new Date(startTime))} – ${formatter.format(new Date(endTime))} UTC`
 }
 
 export function DashboardHeader({
