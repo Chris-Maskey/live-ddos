@@ -21,6 +21,8 @@ type RouteSelection =
   | { kind: "default" }
   | { kind: "route"; key: string }
   | { kind: "none" }
+type Route = AttackReport["current"]["routes"][number]
+type RankedRoute = { route: Route; rank: number }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -32,14 +34,25 @@ const responseError = (body: unknown): string | null => {
   return typeof error.message === "string" ? error.message : null
 }
 
-const makeGlobeScene = (
-  snapshot: AttackReport["current"] | undefined
-): GlobeScene => {
+const matchesRoute = (route: Route, query: string) => {
+  if (/^[a-z]{2}$/.test(query)) {
+    return (
+      route.origin.code.toLowerCase() === query ||
+      route.target.code.toLowerCase() === query
+    )
+  }
+
+  return [route.origin.name, route.target.name].some((name) =>
+    name.toLowerCase().includes(query)
+  )
+}
+
+const makeGlobeScene = (routes: RankedRoute[]): GlobeScene => {
   const arcs: GlobeScene["arcs"] = []
   const locations: GlobeScene["locations"] = []
   const seenCountries = new Set<GlobeScene["locations"][number]["code"]>()
 
-  for (const [order, route] of (snapshot?.routes ?? []).entries()) {
+  for (const { route, rank } of routes) {
     for (const endpoint of [route.origin, route.target]) {
       const { code, latitude, longitude } = endpoint
       if (latitude === null || longitude === null || seenCountries.has(code)) {
@@ -64,7 +77,7 @@ const makeGlobeScene = (
     const weight = Math.sqrt(route.percent)
     arcs.push({
       routeId: route.id,
-      order,
+      order: rank - 1,
       startName: route.origin.name,
       startCode: route.origin.code,
       startLat,
@@ -90,6 +103,7 @@ export function AttackDashboard() {
   const [fetching, setFetching] = useState<
     Partial<Record<RadarRange, boolean>>
   >({})
+  const [routeQuery, setRouteQuery] = useState("")
   const [routeSelection, setRouteSelection] = useState<RouteSelection>({
     kind: "default",
   })
@@ -102,30 +116,53 @@ export function AttackDashboard() {
   const error = errors[range]
   const isFetching = fetching[range] ?? false
   const view = getDashboardViewState({ report, error, isFetching })
-  const scene = useMemo(() => makeGlobeScene(report?.current), [report])
-  const firstMappedCrossBorderRoute = report?.current.routes.find(
-    (route) =>
-      route.origin.code !== route.target.code &&
-      route.origin.latitude !== null &&
-      route.origin.longitude !== null &&
-      route.target.latitude !== null &&
-      route.target.longitude !== null
+  const normalizedRouteQuery = routeQuery.trim().toLowerCase()
+  const rankedRoutes = useMemo(
+    () =>
+      (report?.current.routes ?? []).flatMap((route, index) =>
+        matchesRoute(route, normalizedRouteQuery)
+          ? [{ route, rank: index + 1 }]
+          : []
+      ),
+    [normalizedRouteQuery, report]
   )
-  const defaultRoute = firstMappedCrossBorderRoute ?? report?.current.routes[0]
+  const scene = useMemo(() => makeGlobeScene(rankedRoutes), [rankedRoutes])
+  const firstMappedCrossBorderRoute = rankedRoutes.find(({ route }) =>
+    route.origin.code !== route.target.code &&
+    route.origin.latitude !== null &&
+    route.origin.longitude !== null &&
+    route.target.latitude !== null &&
+    route.target.longitude !== null
+  )?.route
+  const defaultRoute = firstMappedCrossBorderRoute ?? rankedRoutes[0]?.route
   const selectedRoute =
     routeSelection.kind === "none"
       ? undefined
       : routeSelection.kind === "route"
-        ? (report?.current.routes.find(
-            (route) =>
+        ? (rankedRoutes.find(
+            ({ route }) =>
               getAttackRouteKey(route.origin.code, route.target.code) ===
               routeSelection.key
-          ) ?? defaultRoute)
+          )?.route ?? defaultRoute)
         : defaultRoute
   const activeSelectedRouteKey = selectedRoute
     ? getAttackRouteKey(selectedRoute.origin.code, selectedRoute.target.code)
     : null
   const effectiveMotionEnabled = motionEnabled && prefersReducedMotion === false
+
+  const handleRouteQueryChange = (query: string) => {
+    setRouteQuery(query)
+    if (routeSelection.kind !== "route") return
+
+    const selected = report?.current.routes.find(
+      (route) =>
+        getAttackRouteKey(route.origin.code, route.target.code) ===
+        routeSelection.key
+    )
+    if (selected && !matchesRoute(selected, query.trim().toLowerCase())) {
+      setRouteSelection({ kind: "default" })
+    }
+  }
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)")
@@ -279,12 +316,6 @@ export function AttackDashboard() {
           aria-busy={isFetching}
           className="route-index-enter route-index-layout grid min-h-0 min-w-0 gap-4 sm:gap-5"
         >
-          <RouteLedger
-            view={view}
-            selectedRouteKey={activeSelectedRouteKey}
-            onSelectRoute={(key) => setRouteSelection({ kind: "route", key })}
-          />
-
           <div
             id="route-map"
             className="route-index-globe mx-auto w-full max-w-[760px] min-w-0"
@@ -294,6 +325,10 @@ export function AttackDashboard() {
                 <h2 className="text-sm font-semibold text-white">Route map</h2>
                 <p className="mt-1 text-xs leading-tight text-[color:var(--atlas-map-muted)]">
                   Drag or use ← / → to rotate.
+                </p>
+                <p className="mt-2 max-w-xl text-xs leading-normal text-[color:var(--atlas-map-muted)]">
+                  Cloudflare Radar reports up to 40 normalized pairs from
+                  observed traffic; their shares may total less than 100%.
                 </p>
                 {selectedRoute && (
                   <button
@@ -338,14 +373,24 @@ export function AttackDashboard() {
               selectedRouteId={selectedRoute?.id ?? null}
             />
           </div>
+
+          <RouteLedger
+            view={view}
+            routes={rankedRoutes}
+            routeQuery={routeQuery}
+            onRouteQueryChange={handleRouteQueryChange}
+            selectedRouteKey={activeSelectedRouteKey}
+            onSelectRoute={(key) => setRouteSelection({ kind: "route", key })}
+          />
         </section>
       </div>
 
       <footer className="dashboard-footer border-t border-atlas-line/70 bg-atlas-water text-xs leading-normal text-atlas-secondary">
         <div className="dashboard-footer-content mx-auto flex w-full max-w-[1120px] flex-col gap-x-8 gap-y-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-3xl text-pretty">
-            Country locations are approximate. Moving arcs illustrate reported
-            country pairs, not individual attack events.
+            Origins use client IP geolocation; targets use the attacked zone’s
+            billing country. Locations are approximate. Moving arcs summarize
+            country-pair data, not individual attack events.
           </p>
           <p className="shrink-0">
             <a

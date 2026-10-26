@@ -13,6 +13,9 @@ type Route = AttackReport["current"]["routes"][number]
 
 type RouteLedgerProps = {
   view: DashboardViewState
+  routes: Array<{ route: Route; rank: number }>
+  routeQuery: string
+  onRouteQueryChange: (query: string) => void
   selectedRouteKey: string | null
   onSelectRoute: (routeKey: string) => void
 }
@@ -26,13 +29,18 @@ const hasMissingCoordinates = (route: Route) =>
   route.target.latitude === null ||
   route.target.longitude === null
 
-const formatPpChange = (changePp: number) =>
-  `${changePp > 0 ? "+" : ""}${changePp.toFixed(2)} pp`
+const formatPpChange = (changePp: number) => {
+  const roundedChange = Number(changePp.toFixed(2))
+  return `${roundedChange > 0 ? "+" : ""}${roundedChange.toFixed(2)} pp`
+}
 
 const skeletonRows = Array.from({ length: 10 }, (_, index) => index)
 
 export function RouteLedger({
   view,
+  routes,
+  routeQuery,
+  onRouteQueryChange,
   selectedRouteKey,
   onSelectRoute,
 }: RouteLedgerProps) {
@@ -51,7 +59,7 @@ export function RouteLedger({
       onClick={() => setShowAllRoutes((current) => !current)}
       className="route-list-toggle"
     >
-      {expanded ? "Show fewer routes" : `Show all ${routeCount} routes`}
+      {expanded ? "Show fewer routes" : `Show all ${routes.length} routes`}
     </button>
   )
   const renderColumnHeading = () => (
@@ -87,11 +95,20 @@ export function RouteLedger({
               Top routes
             </h2>
             {snapshot && (
-              <span className="text-xs leading-tight text-atlas-secondary tabular-nums">
-                {snapshot.routes.length} routes
-                <span className="route-ledger-scroll-cue">
-                  {" · scroll to browse all"}
-                </span>
+              <span
+                id="route-ledger-count"
+                aria-live="polite"
+                aria-atomic="true"
+                className="text-xs leading-tight text-atlas-secondary tabular-nums"
+              >
+                {routeQuery.trim()
+                  ? `${routes.length} ${routes.length === 1 ? "match" : "matches"} · ${routeCount} routes`
+                  : `${routeCount} routes`}
+                {!routeQuery.trim() && (
+                  <span className="route-ledger-scroll-cue">
+                    {" · scroll to browse all"}
+                  </span>
+                )}
               </span>
             )}
           </div>
@@ -100,6 +117,24 @@ export function RouteLedger({
           </p>
         </div>
       </div>
+
+      {snapshot && routeCount > 0 && (
+        <div className="mt-3 shrink-0">
+          <label htmlFor="route-ledger-search" className="sr-only">
+            Search top routes by country name or code
+          </label>
+          <input
+            id="route-ledger-search"
+            type="search"
+            value={routeQuery}
+            onChange={(event) => onRouteQueryChange(event.target.value)}
+            placeholder="Search country or code"
+            autoComplete="off"
+            aria-describedby="route-ledger-count"
+            className="min-h-10 w-full rounded-lg border border-atlas-line bg-atlas-water px-3 text-sm text-atlas-main placeholder:text-atlas-secondary focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:outline-none"
+          />
+        </div>
+      )}
 
       {view.kind === "stale" && (
         <div
@@ -154,9 +189,9 @@ export function RouteLedger({
 
       {snapshot && (
         <>
-          {snapshot.routes.length > 0 ? (
+          {routes.length > 0 ? (
             <>
-              {snapshot.routes.length > 6 && showAllRoutes && (
+              {routes.length > 2 && showAllRoutes && (
                 <div className="route-list-expanded-actions">
                   <div className="route-list-expanded-action-buttons">
                     {renderRouteListToggle(true)}
@@ -180,7 +215,7 @@ export function RouteLedger({
               >
                 {renderColumnHeading()}
                 <ul className="flex flex-col gap-0">
-                  {snapshot.routes.map((route, index) => {
+                  {routes.map(({ route, rank }) => {
                     const routeKey = getAttackRouteKey(
                       route.origin.code,
                       route.target.code
@@ -193,7 +228,7 @@ export function RouteLedger({
                     const comparisonLabel =
                       comparison.kind === "ranked"
                         ? formatPpChange(comparison.changePp)
-                        : "Unranked"
+                        : "-"
                     const accessibleComparison =
                       comparison.kind === "ranked"
                         ? `change ${formatPpChange(comparison.changePp)} from the previous reporting window`
@@ -211,7 +246,7 @@ export function RouteLedger({
                           <span
                             className={`font-mono text-xs tabular-nums ${selected ? "text-atlas-main" : "text-atlas-secondary"}`}
                           >
-                            {String(index + 1).padStart(2, "0")}
+                            {String(rank).padStart(2, "0")}
                           </span>
                           <span className="min-w-0">
                             <span className="block text-sm leading-normal font-medium break-words">
@@ -249,13 +284,15 @@ export function RouteLedger({
                   })}
                 </ul>
               </div>
-              {snapshot.routes.length > 6 &&
+              {routes.length > 2 &&
                 !showAllRoutes &&
                 renderRouteListToggle(false)}
             </>
           ) : (
             <p className="mt-3 shrink-0 text-sm leading-normal text-atlas-secondary">
-              No ranked routes in this window.
+              {routeQuery.trim()
+                ? `No routes match “${routeQuery.trim()}”.`
+                : "No ranked routes in this window."}
             </p>
           )}
         </>

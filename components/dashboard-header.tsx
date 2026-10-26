@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { Info } from "lucide-react"
 import { StatusButton } from "@/components/ui/status-button"
 import type { RadarRange } from "@/lib/attack-data"
 import type { DashboardViewState } from "@/lib/dashboard-view-state"
@@ -49,9 +48,9 @@ export function DashboardHeader({
   const snapshot = report?.current
   const isFetching = view.isFetching
   const statusLabel = snapshot
-    ? view.kind === "stale" && !isFetching
-      ? `Delayed · retrieved ${formatTimestamp(snapshot.fetchedAt)}`
-      : `Retrieved ${formatTimestamp(snapshot.fetchedAt)}`
+    ? view.kind === "stale"
+      ? `Delayed · Radar updated ${formatTimestamp(snapshot.lastUpdated)}`
+      : `Radar updated ${formatTimestamp(snapshot.lastUpdated)}`
     : view.kind === "unavailable"
       ? isFetching
         ? "Checking Radar"
@@ -60,7 +59,7 @@ export function DashboardHeader({
         ? "Loading Radar report"
         : "Waiting for Radar"
   const statusColor =
-    view.kind === "stale" && !isFetching
+    view.kind === "stale"
       ? "bg-atlas-warning"
       : view.kind === "unavailable" && !isFetching
         ? "bg-atlas-danger"

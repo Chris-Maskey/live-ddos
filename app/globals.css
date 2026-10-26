@@ -452,7 +452,7 @@
 
 @media (min-width: 64rem), (min-width: 52rem) and (orientation: landscape) {
   .route-index-layout {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.3fr) minmax(18rem, 0.9fr);
     grid-template-rows: minmax(0, 1fr);
     gap: 16px;
   }
@@ -517,7 +517,7 @@
   }
 
   .route-index-globe > [role="group"] {
-    height: clamp(13rem, 56vw, 18rem);
+    height: clamp(15rem, 72vw, 24rem);
   }
 
   .route-ledger-rows {
