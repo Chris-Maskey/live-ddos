@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+import { Info } from "lucide-react"
 import { StatusButton } from "@/components/ui/status-button"
 import type { RadarRange } from "@/lib/attack-data"
 import type { DashboardViewState } from "@/lib/dashboard-view-state"
@@ -38,6 +40,8 @@ export function DashboardHeader({
   onRangeChange,
   onRefresh,
 }: DashboardHeaderProps) {
+  const [isLayer7DefinitionPinned, setIsLayer7DefinitionPinned] =
+    useState(false)
   const report =
     view.kind === "ready" || view.kind === "empty" || view.kind === "stale"
       ? view.report
@@ -88,8 +92,36 @@ export function DashboardHeader({
           <h1 className="font-heading text-balance text-atlas-main">
             HTTP DDoS routes
           </h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-atlas-secondary">
-            Share of all reported Layer 7 DDoS requests by country pair.
+          <p className="layer7-help-copy mt-2 max-w-xl text-sm leading-relaxed text-atlas-secondary">
+            Share of all reported{" "}
+            <span
+              className="layer7-help"
+              data-pinned={isLayer7DefinitionPinned}
+            >
+              <button
+                type="button"
+                aria-label="Pin Layer 7 DDoS definition"
+                aria-pressed={isLayer7DefinitionPinned}
+                aria-describedby="layer7-ddos-definition"
+                onClick={() =>
+                  setIsLayer7DefinitionPinned((isPinned) => !isPinned)
+                }
+                className="layer7-help-trigger"
+              >
+                Layer 7 DDoS
+              </button>
+              <span
+                id="layer7-ddos-definition"
+                role="tooltip"
+                className="layer7-help-card"
+              >
+                Layer 7 is the application layer where websites and APIs process
+                HTTP requests. DDoS means distributed denial of service. Some
+                attacks overwhelm these services with requests that can look
+                like normal visits.
+              </span>
+            </span>{" "}
+            requests by country pair.
           </p>
           {snapshot ? (
             <p className="mt-1 font-mono text-xs leading-normal text-atlas-secondary">
