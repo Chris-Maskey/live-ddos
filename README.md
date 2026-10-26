@@ -44,5 +44,3 @@ pnpm build
 `pnpm test:data` runs the normalizer checks with Node's built-in test runner and TypeScript type stripping.
 
 `pnpm test:radar` checks API errors and independent cache lifetimes using the installed Next.js cache implementation, controlled provider responses, and in-memory cache storage. It needs no real API token. Node prints an experimental VM modules warning for this check.
-
-See [SPEC.md](SPEC.md) for the agreed baseline and [tasks/todo.md](tasks/todo.md) for verification results.
