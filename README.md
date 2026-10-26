@@ -25,6 +25,8 @@ The app opens at `http://localhost:3000`. The API accepts `GET /api/attacks?rang
 
 Cloudflare Radar returns up to 40 country pairs for the selected window. Each percentage is the normalized share reported for that pair. The values may not add up to 100 because the endpoint returns only the top pairs. Each row compares a pair with the same origin and target country codes in the prior period, when present, and shows the difference in percentage points. If the pair is missing from the prior top 40, its prior share is unknown, not zero. The map does not show attack volume, bandwidth, attack duration, exact server locations, or individual attack events.
 
+Search narrows these returned routes by origin or target country name or two-letter code. It does not load routes outside Radar's top 40.
+
 Origin countries use Cloudflare's client IP geolocation. Target countries use the billing country for the attacked Cloudflare zone. Both are approximate country locations. Radar covers traffic observed by Cloudflare, not every attack on the Internet.
 
 The 24-hour view compares with Radar's same-weekday control period from one week earlier. The 7-day view compares with the prior 7-day control period. The dashboard shows the actual current window and Radar dataset update time, with a short comparison label in the route ledger. The report also contains the app provider-fetch timestamp, but the page does not show it separately. The browser checks for a new report every five minutes while visible. The server caches current and control pair responses separately for five minutes and coordinate lookups for one day. Refresh requests a report; the app cache may return existing Radar data. Cloudflare does not document a freshness guarantee for this endpoint.

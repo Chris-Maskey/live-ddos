@@ -21,6 +21,8 @@ type RouteSelection =
   | { kind: "default" }
   | { kind: "route"; key: string }
   | { kind: "none" }
+type Route = AttackReport["current"]["routes"][number]
+type RankedRoute = { route: Route; rank: number }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -32,14 +34,25 @@ const responseError = (body: unknown): string | null => {
   return typeof error.message === "string" ? error.message : null
 }
 
-const makeGlobeScene = (
-  snapshot: AttackReport["current"] | undefined
-): GlobeScene => {
+const matchesRoute = (route: Route, query: string) => {
+  if (/^[a-z]{2}$/.test(query)) {
+    return (
+      route.origin.code.toLowerCase() === query ||
+      route.target.code.toLowerCase() === query
+    )
+  }
+
+  return [route.origin.name, route.target.name].some((name) =>
+    name.toLowerCase().includes(query)
+  )
+}
+
+const makeGlobeScene = (routes: RankedRoute[]): GlobeScene => {
   const arcs: GlobeScene["arcs"] = []
   const locations: GlobeScene["locations"] = []
   const seenCountries = new Set<GlobeScene["locations"][number]["code"]>()
 
-  for (const [order, route] of (snapshot?.routes ?? []).entries()) {
+  for (const { route, rank } of routes) {
     for (const endpoint of [route.origin, route.target]) {
       const { code, latitude, longitude } = endpoint
       if (latitude === null || longitude === null || seenCountries.has(code)) {
@@ -64,7 +77,7 @@ const makeGlobeScene = (
     const weight = Math.sqrt(route.percent)
     arcs.push({
       routeId: route.id,
-      order,
+      order: rank - 1,
       startName: route.origin.name,
       startCode: route.origin.code,
       startLat,
@@ -90,6 +103,7 @@ export function AttackDashboard() {
   const [fetching, setFetching] = useState<
     Partial<Record<RadarRange, boolean>>
   >({})
+  const [routeQuery, setRouteQuery] = useState("")
   const [routeSelection, setRouteSelection] = useState<RouteSelection>({
     kind: "default",
   })
@@ -102,30 +116,53 @@ export function AttackDashboard() {
   const error = errors[range]
   const isFetching = fetching[range] ?? false
   const view = getDashboardViewState({ report, error, isFetching })
-  const scene = useMemo(() => makeGlobeScene(report?.current), [report])
-  const firstMappedCrossBorderRoute = report?.current.routes.find(
-    (route) =>
-      route.origin.code !== route.target.code &&
-      route.origin.latitude !== null &&
-      route.origin.longitude !== null &&
-      route.target.latitude !== null &&
-      route.target.longitude !== null
+  const normalizedRouteQuery = routeQuery.trim().toLowerCase()
+  const rankedRoutes = useMemo(
+    () =>
+      (report?.current.routes ?? []).flatMap((route, index) =>
+        matchesRoute(route, normalizedRouteQuery)
+          ? [{ route, rank: index + 1 }]
+          : []
+      ),
+    [normalizedRouteQuery, report]
   )
-  const defaultRoute = firstMappedCrossBorderRoute ?? report?.current.routes[0]
+  const scene = useMemo(() => makeGlobeScene(rankedRoutes), [rankedRoutes])
+  const firstMappedCrossBorderRoute = rankedRoutes.find(({ route }) =>
+    route.origin.code !== route.target.code &&
+    route.origin.latitude !== null &&
+    route.origin.longitude !== null &&
+    route.target.latitude !== null &&
+    route.target.longitude !== null
+  )?.route
+  const defaultRoute = firstMappedCrossBorderRoute ?? rankedRoutes[0]?.route
   const selectedRoute =
     routeSelection.kind === "none"
       ? undefined
       : routeSelection.kind === "route"
-        ? (report?.current.routes.find(
-            (route) =>
+        ? (rankedRoutes.find(
+            ({ route }) =>
               getAttackRouteKey(route.origin.code, route.target.code) ===
               routeSelection.key
-          ) ?? defaultRoute)
+          )?.route ?? defaultRoute)
         : defaultRoute
   const activeSelectedRouteKey = selectedRoute
     ? getAttackRouteKey(selectedRoute.origin.code, selectedRoute.target.code)
     : null
   const effectiveMotionEnabled = motionEnabled && prefersReducedMotion === false
+
+  const handleRouteQueryChange = (query: string) => {
+    setRouteQuery(query)
+    if (routeSelection.kind !== "route") return
+
+    const selected = report?.current.routes.find(
+      (route) =>
+        getAttackRouteKey(route.origin.code, route.target.code) ===
+        routeSelection.key
+    )
+    if (selected && !matchesRoute(selected, query.trim().toLowerCase())) {
+      setRouteSelection({ kind: "default" })
+    }
+  }
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)")
@@ -339,6 +376,9 @@ export function AttackDashboard() {
 
           <RouteLedger
             view={view}
+            routes={rankedRoutes}
+            routeQuery={routeQuery}
+            onRouteQueryChange={handleRouteQueryChange}
             selectedRouteKey={activeSelectedRouteKey}
             onSelectRoute={(key) => setRouteSelection({ kind: "route", key })}
           />

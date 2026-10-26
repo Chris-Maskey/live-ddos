@@ -81,10 +81,11 @@ At narrow widths, place the title and reporting-window controls first, then the 
 
 - `GET /api/attacks?range=1d|7d` returns an `AttackReport`: `current` is the existing snapshot and `comparison` contains only Radar's actual control window and up to 40 country-code shares. The browser validates the full envelope.
 - Request `1dcontrol` for `1d` and `7dcontrol` for `7d` in parallel with current data through separate five-minute pair cache entries. Request coordinates for current routes only; keep the one-day location cache independent.
+- Search the current top 40 locally by origin or target country name or two-letter code. Preserve Radar ranks and use the same filtered route set for the ledger and globe.
 - Match rows by origin and target country codes. A pair missing from the prior top 40 has unknown share, never zero. Show changes in percentage points.
 - Show the actual current window and Radar dataset update time. Keep app fetch and cache behavior in the report/server contract, not in the visible header.
 - A route is an aggregate country pair over a reporting window. Arc motion is decorative and does not represent individual attacks.
-- Do not add counts, severity scores, live-event claims, graphs, filters, export actions, accounts, or another data provider.
+- Do not add attack counts, severity scores, live-event claims, graphs, filters that reach beyond the returned top 40, export actions, accounts, or another data provider.
 - Keep the current Next.js, React, Tailwind, and Three.js stack. Do not add dependencies for this refresh.
 - Keep the cartographic design and globe hierarchy. Route selection highlights the row and globe arc without expanding the row.
 
@@ -96,6 +97,7 @@ At narrow widths, place the title and reporting-window controls first, then the 
 - The route ledger identifies the comparison period for each selected range without repeating full comparison dates.
 - Each route shows its current share and a percentage-point change when the exact pair exists in the prior top 40. A missing pair is clearly unknown, not zero.
 - Selecting a route highlights its ledger row and mapped arc without expanding the row. Unmapped routes remain selectable in the ledger.
+- Search matches origin and target country names and codes, shows the result count, preserves Radar ranks, filters both the ledger and globe, and returns a clear no-results state.
 - A failed refresh retains the previous list and map, shows an error notice, and returns to the normal state after a successful refresh.
 - Initial loading, empty results, reduced motion, keyboard navigation, and globe failure remain understandable and usable.
 - Aggregate-data copy and Cloudflare attribution remain visible.
@@ -104,7 +106,7 @@ At narrow widths, place the title and reporting-window controls first, then the 
 ## Browser references
 
 - [Cloudflare Radar](https://radar.cloudflare.com/) keeps date-range selection near its views and labels metrics with their measure, such as traffic share by bytes or HTTP requests. Keep this dashboard's reporting window and normalized-share explanation easy to find.
-- [NETSCOUT Cyber Threat Horizon](https://horizon.netscout.com/) separates the attack map from attack statistics and names filter groups for sources, destinations, and event types. Keep our map and route details distinct, but skip its filter panel because this product has no corresponding filters.
+- [NETSCOUT Cyber Threat Horizon](https://horizon.netscout.com/) separates the attack map from attack statistics and names filter groups for sources, destinations, and event types. Keep our map and route details distinct; local search only narrows the existing top 40.
 - [Kaspersky Cyberthreat Live Map](https://cybermap.kaspersky.com/) puts globe controls beside the map and shows a most-attacked-country summary with named detection categories. Keep controls close to the globe and route details close to the route list. Do not add detection counts or extra map modes because this app only has normalized country-pair shares and two reporting windows.
 
 These references inform hierarchy and control placement. The field-atlas palette and typography remain specific to this dashboard; the spec does not copy another product's branding or exact layout.

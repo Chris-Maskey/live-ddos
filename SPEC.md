@@ -66,6 +66,9 @@ and additional providers.
    available; zoom and pan are disabled.
 9. A globe rendering failure shows a fallback while leaving the dashboard's
    data interface available.
+10. Search the current top 40 by origin or target country name or two-letter
+    code. Keep the original ranks and show the same filtered routes in the
+    ledger and globe. Search does not request additional data.
 
 ## Data contract and server behavior
 
