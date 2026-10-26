@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Pause, Play } from "lucide-react"
 import { AttackGlobe, type GlobeScene } from "@/components/attack-globe"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { RouteLedger } from "@/components/route-ledger"
+import { IconSwap } from "@/components/ui/icon-swap"
 import {
   getAttackRouteKey,
   isAttackReport,
@@ -15,6 +16,7 @@ import { getDashboardViewState } from "@/lib/dashboard-view-state"
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000
 const MAX_RETRY_DELAY_MS = 30 * 60 * 1000
+type PollOutcome = "success" | "failure" | "cancelled"
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -26,7 +28,9 @@ const responseError = (body: unknown): string | null => {
   return typeof error.message === "string" ? error.message : null
 }
 
-const makeGlobeScene = (snapshot: AttackReport["current"] | undefined): GlobeScene => {
+const makeGlobeScene = (
+  snapshot: AttackReport["current"] | undefined
+): GlobeScene => {
   const arcs: GlobeScene["arcs"] = []
   const locations: GlobeScene["locations"] = []
   const seenCountries = new Set<GlobeScene["locations"][number]["code"]>()
@@ -34,11 +38,7 @@ const makeGlobeScene = (snapshot: AttackReport["current"] | undefined): GlobeSce
   for (const [order, route] of (snapshot?.routes ?? []).entries()) {
     for (const endpoint of [route.origin, route.target]) {
       const { code, latitude, longitude } = endpoint
-      if (
-        latitude === null ||
-        longitude === null ||
-        seenCountries.has(code)
-      ) {
+      if (latitude === null || longitude === null || seenCountries.has(code)) {
         continue
       }
 
@@ -83,11 +83,11 @@ export function AttackDashboard() {
     Partial<Record<RadarRange, boolean>>
   >({})
   const [selectedRouteKey, setSelectedRouteKey] = useState<string | null>(null)
-  const [refreshKey, setRefreshKey] = useState(0)
   const [motionEnabled, setMotionEnabled] = useState(true)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<
     boolean | null
   >(null)
+  const pollRef = useRef<(() => Promise<PollOutcome>) | null>(null)
   const report = reports[range]
   const error = errors[range]
   const isFetching = fetching[range] ?? false
@@ -96,10 +96,9 @@ export function AttackDashboard() {
   const selectedRoute = report?.current.routes.find(
     (route) =>
       getAttackRouteKey(route.origin.code, route.target.code) ===
-      selectedRouteKey,
+      selectedRouteKey
   )
-  const effectiveMotionEnabled =
-    motionEnabled && prefersReducedMotion === false
+  const effectiveMotionEnabled = motionEnabled && prefersReducedMotion === false
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)")
@@ -112,6 +111,7 @@ export function AttackDashboard() {
   useEffect(() => {
     let stopped = false
     let inFlight = false
+    let activePoll: Promise<PollOutcome> | null = null
     let refreshOnVisibility = false
     let retryDelay = POLL_INTERVAL_MS
     let timer: number | null = null
@@ -127,66 +127,81 @@ export function AttackDashboard() {
       if (!stopped) timer = window.setTimeout(() => void poll(), delay)
     }
 
-    const poll = async () => {
-      if (stopped) return
+    const poll = (): Promise<PollOutcome> => {
+      if (stopped) return Promise.resolve("cancelled")
       if (document.visibilityState !== "visible") {
         schedule(POLL_INTERVAL_MS)
-        return
+        return Promise.resolve("cancelled")
       }
       if (inFlight) {
-        refreshOnVisibility = true
-        return
+        return activePoll ?? Promise.resolve("cancelled")
       }
 
       inFlight = true
-      controller = new AbortController()
+      const requestController = new AbortController()
+      controller = requestController
       setFetching((current) => ({ ...current, [range]: true }))
-      try {
-        const response = await fetch(`/api/attacks?range=${range}`, {
-          cache: "no-store",
-          signal: controller.signal,
-        })
-        const body: unknown = await response.json()
-        if (!response.ok) {
-          throw new Error(
-            responseError(body) ?? "Cloudflare Radar could not be reached."
-          )
-        }
+      const request = (async (): Promise<PollOutcome> => {
+        let outcome: PollOutcome = "cancelled"
+        try {
+          const response = await fetch(`/api/attacks?range=${range}`, {
+            cache: "no-store",
+            signal: requestController.signal,
+          })
+          const body: unknown = await response.json()
+          if (!response.ok) {
+            throw new Error(
+              responseError(body) ?? "Cloudflare Radar could not be reached."
+            )
+          }
 
-        if (!isAttackReport(body)) {
-          throw new Error("Cloudflare Radar returned an unexpected response.")
+          if (!isAttackReport(body)) {
+            throw new Error("Cloudflare Radar returned an unexpected response.")
+          }
+          const nextReport = body
+          setReports((current) => ({ ...current, [range]: nextReport }))
+          setErrors((current) => {
+            const next = { ...current }
+            delete next[range]
+            return next
+          })
+          retryDelay = POLL_INTERVAL_MS
+          outcome = "success"
+        } catch (cause) {
+          if (!requestController.signal.aborted) {
+            setErrors((current) => ({
+              ...current,
+              [range]:
+                cause instanceof Error
+                  ? cause.message
+                  : "Cloudflare Radar could not be reached.",
+            }))
+            retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY_MS)
+            outcome = "failure"
+          }
+        } finally {
+          inFlight = false
+          if (controller === requestController) controller = null
+          if (!stopped) {
+            setFetching((current) => ({ ...current, [range]: false }))
+            if (refreshOnVisibility && document.visibilityState === "visible") {
+              refreshOnVisibility = false
+              schedule(0)
+            } else {
+              schedule(retryDelay)
+            }
+          }
         }
-        const nextReport = body
-        setReports((current) => ({ ...current, [range]: nextReport }))
-        setErrors((current) => {
-          const next = { ...current }
-          delete next[range]
-          return next
-        })
-        retryDelay = POLL_INTERVAL_MS
-      } catch (cause) {
-        if (!controller.signal.aborted) {
-          setErrors((current) => ({
-            ...current,
-            [range]:
-              cause instanceof Error
-                ? cause.message
-                : "Cloudflare Radar could not be reached.",
-          }))
-          retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY_MS)
-        }
-      } finally {
-        inFlight = false
-        if (stopped) return
-        setFetching((current) => ({ ...current, [range]: false }))
-        if (refreshOnVisibility && document.visibilityState === "visible") {
-          refreshOnVisibility = false
-          schedule(0)
-        } else {
-          schedule(retryDelay)
-        }
-      }
+        return outcome
+      })()
+      activePoll = request
+      void request.then(() => {
+        if (activePoll === request) activePoll = null
+      })
+      return request
     }
+
+    pollRef.current = poll
 
     const onVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
@@ -207,9 +222,20 @@ export function AttackDashboard() {
       stopped = true
       clearTimer()
       controller?.abort()
+      if (pollRef.current === poll) pollRef.current = null
       document.removeEventListener("visibilitychange", onVisibilityChange)
     }
-  }, [range, refreshKey])
+  }, [range])
+
+  const handleRefresh = async () => {
+    const poll = pollRef.current
+    if (!poll) throw new Error("The dashboard is still loading.")
+
+    const outcome = await poll()
+    if (outcome !== "success") {
+      throw new Error("Cloudflare Radar could not be refreshed.")
+    }
+  }
 
   return (
     <main className="dashboard-page bg-atlas-water text-atlas-main">
@@ -218,7 +244,7 @@ export function AttackDashboard() {
           range={range}
           view={view}
           onRangeChange={setRange}
-          onRefresh={() => setRefreshKey((key) => key + 1)}
+          onRefresh={handleRefresh}
         />
 
         <section
@@ -236,11 +262,16 @@ export function AttackDashboard() {
                 aria-pressed={effectiveMotionEnabled}
                 className="dashboard-control inline-flex min-h-11 items-center gap-2 px-1 text-xs text-atlas-secondary focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-water focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-75"
               >
-                {effectiveMotionEnabled ? (
-                  <Pause aria-hidden="true" className="size-4" />
-                ) : (
-                  <Play aria-hidden="true" className="size-4" />
-                )}
+                <IconSwap
+                  state={effectiveMotionEnabled ? "pause" : "play"}
+                  className="inline-flex size-16 shrink-0 items-center justify-center"
+                >
+                  {effectiveMotionEnabled ? (
+                    <Pause aria-hidden="true" className="size-16 shrink-0" />
+                  ) : (
+                    <Play aria-hidden="true" className="size-16 shrink-0" />
+                  )}
+                </IconSwap>
                 {prefersReducedMotion === null
                   ? "Checking motion preference"
                   : prefersReducedMotion
@@ -269,10 +300,10 @@ export function AttackDashboard() {
       <footer className="dashboard-footer border-t border-atlas-line/70 bg-atlas-water text-xs leading-normal text-atlas-secondary">
         <div className="dashboard-footer-content mx-auto flex w-full max-w-[1120px] flex-col gap-x-8 gap-y-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-3xl text-pretty">
-            Routes show Cloudflare Radar&apos;s normalized reported share for each
-            country pair in the selected window. Locations are country-level
-            approximations. Arc direction and motion are illustrative, not
-            individual attack events.
+            Routes show Cloudflare Radar&apos;s normalized reported share for
+            each country pair in the selected window. Locations are
+            country-level approximations. Arc direction and motion are
+            illustrative, not individual attack events.
           </p>
           <p className="shrink-0">
             <a
