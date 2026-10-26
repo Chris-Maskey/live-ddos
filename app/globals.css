@@ -360,6 +360,33 @@
   }
 }
 
+@media (max-width: 40rem) {
+  .dashboard-page {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    grid-template-rows: auto auto;
+  }
+
+  .dashboard-content {
+    grid-template-rows: auto auto;
+    padding-bottom: 1rem;
+  }
+
+  .route-index-layout {
+    grid-template-rows: auto auto;
+  }
+
+  .route-index-globe > [role="group"] {
+    height: clamp(12rem, 60vw, 18rem);
+  }
+
+  .route-ledger-rows {
+    flex: none;
+    overflow-y: visible;
+  }
+}
+
 .route-index-enter {
   animation: route-index-enter 360ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
