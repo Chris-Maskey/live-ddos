@@ -228,7 +228,7 @@ export function RouteLedger({
                     const comparisonLabel =
                       comparison.kind === "ranked"
                         ? formatPpChange(comparison.changePp)
-                        : "Not in prior 40"
+                        : "-"
                     const accessibleComparison =
                       comparison.kind === "ranked"
                         ? `change ${formatPpChange(comparison.changePp)} from the previous reporting window`
