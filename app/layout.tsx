@@ -1,6 +1,17 @@
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import type { Metadata, Viewport } from "next"
+import { Geist_Mono, Inter } from "next/font/google"
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+})
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+})
 
 export const metadata: Metadata = {
   title: "DDoS Atlas",
@@ -18,7 +29,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="antialiased font-sans">
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${inter.variable} ${geistMono.variable} antialiased font-sans`}
+    >
       <body>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
