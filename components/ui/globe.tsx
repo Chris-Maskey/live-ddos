@@ -301,7 +301,13 @@ function WorldContents({
         position={new Vector3(-200, 500, 200)}
         intensity={0.8}
       />
-      <group scale={size.width < 520 ? 1.15 : 1}>
+      <group
+        scale={
+          size.width < 520
+            ? Math.min(1.15, size.width / size.height)
+            : 1
+        }
+      >
         <Globe
           globeConfig={globeConfig}
           palette={palette}

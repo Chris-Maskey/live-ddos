@@ -249,6 +249,72 @@
   color: var(--color-charcoal);
 }
 
+.layer7-help-copy {
+  position: relative;
+}
+
+.layer7-help-trigger {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--atlas-route);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+
+.layer7-help-trigger:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid var(--atlas-route);
+  outline-offset: 3px;
+}
+
+.layer7-help-card {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: min(20rem, 100%);
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--atlas-line);
+  border-radius: var(--radius-cards);
+  background: var(--atlas-panel);
+  box-shadow: var(--shadow-md);
+  color: var(--atlas-main);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(0.375rem);
+  transform-origin: top left;
+  visibility: hidden;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    visibility 0s 180ms;
+}
+
+.layer7-help-trigger:focus-visible + .layer7-help-card,
+.layer7-help[data-pinned="true"] .layer7-help-card {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .layer7-help:not([data-pinned="true"]):hover .layer7-help-card {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+    visibility: visible;
+    transition-delay: 0s;
+  }
+}
+
 .route-index-layout {
   gap: 12px;
   grid-template-rows: minmax(0, 1.35fr) minmax(10rem, 0.65fr);
@@ -668,6 +734,11 @@
 @media (prefers-reduced-motion: reduce) {
   .route-index-enter {
     animation: none;
+  }
+
+  .layer7-help-card {
+    transform: none;
+    transition: none;
   }
 
   .loading-pixel,
