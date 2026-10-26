@@ -314,12 +314,12 @@ export function AttackDashboard() {
               >
                 <IconSwap
                   state={effectiveMotionEnabled ? "pause" : "play"}
-                  className="inline-flex size-4 shrink-0 items-center justify-center"
+                  className="inline-flex size-16 shrink-0 items-center justify-center"
                 >
                   {effectiveMotionEnabled ? (
-                    <Pause aria-hidden="true" className="size-4 shrink-0" />
+                    <Pause aria-hidden="true" className="size-16 shrink-0" />
                   ) : (
-                    <Play aria-hidden="true" className="size-4 shrink-0" />
+                    <Play aria-hidden="true" className="size-16 shrink-0" />
                   )}
                 </IconSwap>
                 {prefersReducedMotion === null
