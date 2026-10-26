@@ -17,6 +17,10 @@ import { getDashboardViewState } from "@/lib/dashboard-view-state"
 const POLL_INTERVAL_MS = 5 * 60 * 1000
 const MAX_RETRY_DELAY_MS = 30 * 60 * 1000
 type PollOutcome = "success" | "failure" | "cancelled"
+type RouteSelection =
+  | { kind: "default" }
+  | { kind: "route"; key: string }
+  | { kind: "none" }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -61,8 +65,12 @@ const makeGlobeScene = (
     arcs.push({
       routeId: route.id,
       order,
+      startName: route.origin.name,
+      startCode: route.origin.code,
       startLat,
       startLng,
+      endName: route.target.name,
+      endCode: route.target.code,
       endLat,
       endLng,
       arcAlt: Math.min(0.52, 0.12 + weight * 0.035),
@@ -82,7 +90,9 @@ export function AttackDashboard() {
   const [fetching, setFetching] = useState<
     Partial<Record<RadarRange, boolean>>
   >({})
-  const [selectedRouteKey, setSelectedRouteKey] = useState<string | null>(null)
+  const [routeSelection, setRouteSelection] = useState<RouteSelection>({
+    kind: "default",
+  })
   const [motionEnabled, setMotionEnabled] = useState(true)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<
     boolean | null
@@ -93,11 +103,28 @@ export function AttackDashboard() {
   const isFetching = fetching[range] ?? false
   const view = getDashboardViewState({ report, error, isFetching })
   const scene = useMemo(() => makeGlobeScene(report?.current), [report])
-  const selectedRoute = report?.current.routes.find(
+  const firstMappedCrossBorderRoute = report?.current.routes.find(
     (route) =>
-      getAttackRouteKey(route.origin.code, route.target.code) ===
-      selectedRouteKey
+      route.origin.code !== route.target.code &&
+      route.origin.latitude !== null &&
+      route.origin.longitude !== null &&
+      route.target.latitude !== null &&
+      route.target.longitude !== null
   )
+  const defaultRoute = firstMappedCrossBorderRoute ?? report?.current.routes[0]
+  const selectedRoute =
+    routeSelection.kind === "none"
+      ? undefined
+      : routeSelection.kind === "route"
+        ? (report?.current.routes.find(
+            (route) =>
+              getAttackRouteKey(route.origin.code, route.target.code) ===
+              routeSelection.key
+          ) ?? defaultRoute)
+        : defaultRoute
+  const activeSelectedRouteKey = selectedRoute
+    ? getAttackRouteKey(selectedRoute.origin.code, selectedRoute.target.code)
+    : null
   const effectiveMotionEnabled = motionEnabled && prefersReducedMotion === false
 
   useEffect(() => {
@@ -248,28 +275,51 @@ export function AttackDashboard() {
         />
 
         <section
-          aria-label="Ranked routes and globe visualization"
+          aria-label="Top routes and globe visualization"
           aria-busy={isFetching}
           className="route-index-enter route-index-layout grid min-h-0 min-w-0 gap-4 sm:gap-5"
         >
-          <div className="route-index-globe mx-auto w-full max-w-[760px] min-w-0">
-            <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-3">
-              <p className="text-xs text-atlas-secondary">Drag to rotate</p>
+          <RouteLedger
+            view={view}
+            selectedRouteKey={activeSelectedRouteKey}
+            onSelectRoute={(key) => setRouteSelection({ kind: "route", key })}
+          />
+
+          <div
+            id="route-map"
+            className="route-index-globe mx-auto w-full max-w-[760px] min-w-0"
+          >
+            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold text-white">Route map</h2>
+                <p className="mt-1 text-xs leading-tight text-[color:var(--atlas-map-muted)]">
+                  Drag or use ← / → to rotate.
+                </p>
+                {selectedRoute && (
+                  <button
+                    type="button"
+                    onClick={() => setRouteSelection({ kind: "none" })}
+                    className="mt-1 inline-flex min-h-8 items-center rounded text-xs font-medium text-[color:var(--atlas-map-route)] underline underline-offset-2 hover:text-white focus-visible:ring-2 focus-visible:ring-atlas-map-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-map-water focus-visible:outline-none"
+                  >
+                    Clear selection
+                  </button>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setMotionEnabled((enabled) => !enabled)}
                 disabled={prefersReducedMotion !== false}
                 aria-pressed={effectiveMotionEnabled}
-                className="dashboard-control inline-flex min-h-11 items-center gap-2 px-1 text-xs text-atlas-secondary focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-water focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-75"
+                className="dashboard-control inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-3 text-xs font-medium text-[color:var(--atlas-map-muted)] focus-visible:ring-2 focus-visible:ring-atlas-map-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-map-water focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-75"
               >
                 <IconSwap
                   state={effectiveMotionEnabled ? "pause" : "play"}
-                  className="inline-flex size-16 shrink-0 items-center justify-center"
+                  className="inline-flex size-4 shrink-0 items-center justify-center"
                 >
                   {effectiveMotionEnabled ? (
-                    <Pause aria-hidden="true" className="size-16 shrink-0" />
+                    <Pause aria-hidden="true" className="size-4 shrink-0" />
                   ) : (
-                    <Play aria-hidden="true" className="size-16 shrink-0" />
+                    <Play aria-hidden="true" className="size-4 shrink-0" />
                   )}
                 </IconSwap>
                 {prefersReducedMotion === null
@@ -288,22 +338,14 @@ export function AttackDashboard() {
               selectedRouteId={selectedRoute?.id ?? null}
             />
           </div>
-
-          <RouteLedger
-            view={view}
-            selectedRouteKey={selectedRouteKey}
-            onSelectRoute={setSelectedRouteKey}
-          />
         </section>
       </div>
 
       <footer className="dashboard-footer border-t border-atlas-line/70 bg-atlas-water text-xs leading-normal text-atlas-secondary">
         <div className="dashboard-footer-content mx-auto flex w-full max-w-[1120px] flex-col gap-x-8 gap-y-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-3xl text-pretty">
-            Routes show Cloudflare Radar&apos;s normalized reported share for
-            each country pair in the selected window. Locations are
-            country-level approximations. Arc direction and motion are
-            illustrative, not individual attack events.
+            Country locations are approximate. Moving arcs illustrate reported
+            country pairs, not individual attack events.
           </p>
           <p className="shrink-0">
             <a
