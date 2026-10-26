@@ -29,6 +29,9 @@ It does not establish a new audience, hosting platform, or commercial use case.
   Arc motion is a display effect, not an individual attack event.
 - Origin countries describe client IP geolocation. Target countries describe
   the attacked zone's billing country. Coordinates are approximate.
+- Keep a visible map explanation that covers Cloudflare-observed scope, the
+  top-40 limit, normalized shares that may total less than 100%, origin and
+  target geography, approximate locations, and aggregate arcs.
 - Show the actual current reporting window and Radar dataset update time in
   the header. Keep the app provider-fetch timestamp in the report data without
   giving it a separate UI label. Do not claim an upstream freshness guarantee.

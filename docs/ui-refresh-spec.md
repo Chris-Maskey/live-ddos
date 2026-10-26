@@ -72,6 +72,9 @@ At narrow widths, place the title and reporting-window controls first, then the 
 7. On a failed refresh, keep the last successful routes and globe visible. Add an inline delayed-update notice with the error message. Clear the notice after a successful refresh.
 8. Keep useful initial-loading, empty-data, and globe-fallback states. The route ledger must remain usable if WebGL fails.
 9. Keep the explanation of aggregate routes, Cloudflare Radar attribution, and the CC BY-NC 4.0 license visible without competing with the map.
+   Explain that Radar reports up to 40 normalized pairs from observed traffic,
+   that listed shares may total less than 100%, and how origin and target
+   countries are assigned. Label locations approximate and arcs aggregate.
 10. Use visible keyboard focus and native or equivalently accessible controls. Meet WCAG 2.2 AA contrast, including 4.5:1 for normal text and 3:1 for large text and meaningful control boundaries. Hover styling must not be the only selected-state cue.
 
 ## Data and behavior boundaries

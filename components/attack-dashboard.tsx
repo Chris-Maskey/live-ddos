@@ -295,6 +295,10 @@ export function AttackDashboard() {
                 <p className="mt-1 text-xs leading-tight text-[color:var(--atlas-map-muted)]">
                   Drag or use ← / → to rotate.
                 </p>
+                <p className="mt-2 max-w-xl text-xs leading-normal text-[color:var(--atlas-map-muted)]">
+                  Cloudflare Radar reports up to 40 normalized pairs from
+                  observed traffic; their shares may total less than 100%.
+                </p>
                 {selectedRoute && (
                   <button
                     type="button"
@@ -344,8 +348,9 @@ export function AttackDashboard() {
       <footer className="dashboard-footer border-t border-atlas-line/70 bg-atlas-water text-xs leading-normal text-atlas-secondary">
         <div className="dashboard-footer-content mx-auto flex w-full max-w-[1120px] flex-col gap-x-8 gap-y-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-3xl text-pretty">
-            Country locations are approximate. Moving arcs illustrate reported
-            country pairs, not individual attack events.
+            Origins use client IP geolocation; targets use the attacked zone’s
+            billing country. Locations are approximate. Moving arcs summarize
+            country-pair data, not individual attack events.
           </p>
           <p className="shrink-0">
             <a
