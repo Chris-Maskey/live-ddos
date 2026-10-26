@@ -12,7 +12,7 @@ Primary user: a visitor checking recent HTTP DDoS activity across country pairs 
 
 ## Assumptions
 
-- Keep the current map hierarchy, route selection, reporting windows, refresh behavior, motion controls, attribution, and globe fallback.
+- Put the globe before the route ledger, with a wider map column on desktop and a taller globe on mobile. Keep route selection, reporting windows, refresh behavior, motion controls, attribution, and globe fallback.
 - Compare current route shares with the equivalent Radar control period. Use percentage-point changes only when both top-40 responses contain the same country-code pair.
 - Show the actual current window and Radar dataset update time in compact form. Keep the app provider-fetch timestamp in report data without surfacing it as a separate UI detail. Use a short ledger label to explain the comparison period; omit the cache explanation.
 - Keep the dark map-focused presentation. Give it a more distinctive cartographic identity.

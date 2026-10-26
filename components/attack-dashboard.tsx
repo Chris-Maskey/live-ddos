@@ -279,12 +279,6 @@ export function AttackDashboard() {
           aria-busy={isFetching}
           className="route-index-enter route-index-layout grid min-h-0 min-w-0 gap-4 sm:gap-5"
         >
-          <RouteLedger
-            view={view}
-            selectedRouteKey={activeSelectedRouteKey}
-            onSelectRoute={(key) => setRouteSelection({ kind: "route", key })}
-          />
-
           <div
             id="route-map"
             className="route-index-globe mx-auto w-full max-w-[760px] min-w-0"
@@ -342,6 +336,12 @@ export function AttackDashboard() {
               selectedRouteId={selectedRoute?.id ?? null}
             />
           </div>
+
+          <RouteLedger
+            view={view}
+            selectedRouteKey={activeSelectedRouteKey}
+            onSelectRoute={(key) => setRouteSelection({ kind: "route", key })}
+          />
         </section>
       </div>
 
