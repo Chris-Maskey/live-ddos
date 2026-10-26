@@ -26,8 +26,10 @@ const hasMissingCoordinates = (route: Route) =>
   route.target.latitude === null ||
   route.target.longitude === null
 
-const formatPpChange = (changePp: number) =>
-  `${changePp > 0 ? "+" : ""}${changePp.toFixed(2)} pp`
+const formatPpChange = (changePp: number) => {
+  const roundedChange = Number(changePp.toFixed(2))
+  return `${roundedChange > 0 ? "+" : ""}${roundedChange.toFixed(2)} pp`
+}
 
 const skeletonRows = Array.from({ length: 10 }, (_, index) => index)
 
@@ -193,7 +195,7 @@ export function RouteLedger({
                     const comparisonLabel =
                       comparison.kind === "ranked"
                         ? formatPpChange(comparison.changePp)
-                        : "Unranked"
+                        : "Outside prior top 40"
                     const accessibleComparison =
                       comparison.kind === "ranked"
                         ? `change ${formatPpChange(comparison.changePp)} from the previous reporting window`
