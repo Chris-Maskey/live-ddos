@@ -74,7 +74,7 @@ export function DashboardHeader({
         </div>
       </div>
 
-      <div className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <div className="mt-3 mb-3 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h1 className="font-heading text-[clamp(1.5rem,2.5vw,1.9rem)] leading-[1.1] font-semibold tracking-tight text-balance text-atlas-main">
           HTTP DDoS routes
         </h1>
@@ -112,40 +112,6 @@ export function DashboardHeader({
             Refresh
           </button>
         </div>
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] leading-normal text-atlas-secondary">
-        {snapshot && (
-          <p>
-            <span className="font-medium text-atlas-main">Reporting window</span>{" "}
-            <time
-              dateTime={snapshot.window.startTime}
-              className="font-mono tabular-nums"
-            >
-              {formatTimestamp(snapshot.window.startTime)}
-            </time>{" "}
-            to{" "}
-            <time
-              dateTime={snapshot.window.endTime}
-              className="font-mono tabular-nums"
-            >
-              {formatTimestamp(snapshot.window.endTime)}
-            </time>
-          </p>
-        )}
-        {snapshot && (
-          <p>
-            <span className="font-medium text-atlas-main">
-              Radar dataset updated
-            </span>{" "}
-            <time
-              dateTime={snapshot.lastUpdated}
-              className="font-mono tabular-nums"
-            >
-              {formatTimestamp(snapshot.lastUpdated)}
-            </time>
-          </p>
-        )}
       </div>
     </header>
   )
