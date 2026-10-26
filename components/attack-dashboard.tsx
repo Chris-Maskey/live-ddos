@@ -61,8 +61,10 @@ const makeGlobeScene = (
     arcs.push({
       routeId: route.id,
       order,
+      startName: route.origin.name,
       startLat,
       startLng,
+      endName: route.target.name,
       endLat,
       endLng,
       arcAlt: Math.min(0.52, 0.12 + weight * 0.035),
@@ -97,6 +99,9 @@ export function AttackDashboard() {
     (route) =>
       getAttackRouteKey(route.origin.code, route.target.code) ===
       selectedRouteKey
+  )
+  const hasSelectedRoutePath = scene.arcs.some(
+    (arc) => arc.routeId === selectedRoute?.id
   )
   const effectiveMotionEnabled = motionEnabled && prefersReducedMotion === false
 
@@ -248,19 +253,40 @@ export function AttackDashboard() {
         />
 
         <section
-          aria-label="Ranked routes and globe visualization"
+          aria-label="Top routes and globe visualization"
           aria-busy={isFetching}
           className="route-index-enter route-index-layout grid min-h-0 min-w-0 gap-4 sm:gap-5"
         >
-          <div className="route-index-globe mx-auto w-full max-w-[760px] min-w-0">
-            <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-3">
-              <p className="text-xs text-atlas-secondary">Drag to rotate</p>
+          <RouteLedger
+            view={view}
+            selectedRouteKey={selectedRouteKey}
+            onSelectRoute={setSelectedRouteKey}
+          />
+
+          <div
+            id="route-map"
+            className="route-index-globe mx-auto w-full max-w-[760px] min-w-0"
+          >
+            <div className="flex min-h-12 flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <div>
+                <h2 className="text-sm font-semibold text-white">Route map</h2>
+                <p className="mt-1 text-xs leading-tight text-[color:var(--atlas-map-muted)]">
+                  Select a row to highlight its path · focus the map and use ← /
+                  →, or drag to rotate
+                </p>
+                {selectedRoute && (
+                  <p className="mt-1 text-xs leading-tight text-[color:var(--atlas-map-selected-route)]">
+                    {hasSelectedRoutePath ? "Highlighted" : "Selected"}:{" "}
+                    {selectedRoute.origin.name} → {selectedRoute.target.name}
+                  </p>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setMotionEnabled((enabled) => !enabled)}
                 disabled={prefersReducedMotion !== false}
                 aria-pressed={effectiveMotionEnabled}
-                className="dashboard-control inline-flex min-h-11 items-center gap-2 px-1 text-xs text-atlas-secondary focus-visible:ring-2 focus-visible:ring-atlas-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-water focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-75"
+                className="dashboard-control inline-flex min-h-[52px] min-w-[48px] items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-3 text-xs font-medium text-[color:var(--atlas-map-muted)] focus-visible:ring-2 focus-visible:ring-atlas-map-route focus-visible:ring-offset-2 focus-visible:ring-offset-atlas-map-water focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-75"
               >
                 <IconSwap
                   state={effectiveMotionEnabled ? "pause" : "play"}
@@ -288,22 +314,14 @@ export function AttackDashboard() {
               selectedRouteId={selectedRoute?.id ?? null}
             />
           </div>
-
-          <RouteLedger
-            view={view}
-            selectedRouteKey={selectedRouteKey}
-            onSelectRoute={setSelectedRouteKey}
-          />
         </section>
       </div>
 
       <footer className="dashboard-footer border-t border-atlas-line/70 bg-atlas-water text-xs leading-normal text-atlas-secondary">
         <div className="dashboard-footer-content mx-auto flex w-full max-w-[1120px] flex-col gap-x-8 gap-y-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-3xl text-pretty">
-            Routes show Cloudflare Radar&apos;s normalized reported share for
-            each country pair in the selected window. Locations are
-            country-level approximations. Arc direction and motion are
-            illustrative, not individual attack events.
+            Country locations are approximate. Moving arcs illustrate reported
+            country pairs, not individual attack events.
           </p>
           <p className="shrink-0">
             <a
